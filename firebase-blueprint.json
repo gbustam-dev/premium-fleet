@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user preferences and profile information.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "preferredUnits": {
+          "type": "string",
+          "enum": ["KM/L", "L/100KM", "MPG"],
+          "description": "The user's preferred fuel efficiency units."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The user's preferred currency (e.g., USD, EUR)."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the user's profile picture."
+        }
+      },
+      "required": ["name", "email", "preferredUnits", "currency"]
+    },
+    "FuelLog": {
+      "title": "Fuel Log",
+      "description": "Represents a single fuel refuel entry.",
+      "type": "object",
+      "properties": {
+        "vehicleId": {
+          "type": "string",
+          "description": "The ID of the vehicle this log belongs to."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The date of the refuel (YYYY-MM-DD)."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time of the refuel (HH:MM)."
+        },
+        "mileage": {
+          "type": "number",
+          "description": "The odometer reading at the time of refuel."
+        },
+        "liters": {
+          "type": "number",
+          "description": "The amount of fuel in liters."
+        },
+        "pricePerLiter": {
+          "type": "number",
+          "description": "The price per liter of fuel."
+        },
+        "totalCost": {
+          "type": "number",
+          "description": "The total cost of the refuel."
+        },
+        "stationName": {
+          "type": "string",
+          "description": "The name of the gas station."
+        },
+        "fuelType": {
+          "type": "string",
+          "description": "The type of fuel (e.g., Regular, Premium)."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the gas station."
+        },
+        "isHighEfficiency": {
+          "type": "boolean",
+          "description": "Whether this refuel was highly efficient."
+        },
+        "location": {
+          "type": "object",
+          "description": "The geographic location of the gas station."
+        }
+      },
+      "required": ["vehicleId", "date", "time", "mileage", "liters", "pricePerLiter", "totalCost"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Represents a user's vehicle.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name or nickname of the vehicle."
+        },
+        "make": {
+          "type": "string",
+          "description": "The manufacturer of the vehicle."
+        },
+        "model": {
+          "type": "string",
+          "description": "The model of the vehicle."
+        },
+        "year": {
+          "type": "number",
+          "description": "The manufacturing year of the vehicle."
+        },
+        "plate": {
+          "type": "string",
+          "description": "The license plate of the vehicle."
+        }
+      },
+      "required": ["name", "make", "model", "year"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles."
+    },
+    "/users/{userId}/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Subcollection of vehicles for a specific user."
+    },
+    "/users/{userId}/fuelLogs/{logId}": {
+      "schema": "FuelLog",
+      "description": "Subcollection of fuel logs for a specific user."
+    }
+  }
+}

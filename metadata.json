@@ -1,0 +1,5 @@
+{
+  "name": "Premium Fleet",
+  "description": "A high-end vehicle fleet management and fuel efficiency tracking application with editorial design.",
+  "requestFramePermissions": ["geolocation"]
+}

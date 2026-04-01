@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{userId}
+    // Document ID: userId (Firebase Auth UID)
+    // Fields:
+    //   - name: string (required, 1-100 chars)
+    //   - email: string (required, valid email format)
+    //   - preferredUnits: string (required, enum: ['KM/L', 'L/100KM', 'MPG'])
+    //   - currency: string (required, 1-10 chars)
+    //   - avatarUrl: string (optional, valid URL)
+    //
+    // Collection: /users/{userId}/vehicles/{vehicleId}
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, 1-100 chars)
+    //   - make: string (required, 1-50 chars)
+    //   - model: string (required, 1-50 chars)
+    //   - year: number (required, 1900-2100)
+    //   - plate: string (optional, 1-20 chars)
+    //
+    // Collection: /users/{userId}/fuelLogs/{logId}
+    // Document ID: auto-generated
+    // Fields:
+    //   - vehicleId: string (required)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - time: string (required, HH:MM)
+    //   - mileage: number (required, positive)
+    //   - liters: number (required, positive)
+    //   - pricePerLiter: number (required, positive)
+    //   - totalCost: number (required, positive)
+    //   - stationName: string (optional, 1-100 chars)
+    //   - fuelType: string (optional, 1-50 chars)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "gbustam@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string &&
+        (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['name', 'email', 'preferredUnits', 'currency']) &&
+             hasOnlyAllowedFields(['id', 'name', 'email', 'preferredUnits', 'currency', 'avatarUrl', 'role', 'geminiApiKey']) &&
+             (!('id' in data) || data.id is string) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             isValidEmail(data.email) &&
+             data.preferredUnits in ['KM/L', 'L/100KM', 'MPG'] &&
+             data.currency is string && data.currency.size() > 0 && data.currency.size() <= 10 &&
+             (!('avatarUrl' in data) || isValidUrl(data.avatarUrl)) &&
+             (!('role' in data) || data.role in ['admin', 'user']);
+    }
+
+    function isValidVehicle(data) {
+      return hasRequiredFields(['name', 'make', 'model', 'year']) &&
+             hasOnlyAllowedFields(['id', 'name', 'make', 'model', 'year', 'plate', 'targetEfficiency', 'propulsion']) &&
+             (!('id' in data) || data.id is string) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.make is string && data.make.size() > 0 && data.make.size() <= 150 &&
+             data.model is string && data.model.size() > 0 && data.model.size() <= 150 &&
+             data.year is number && data.year >= 1900 && data.year <= 2100 &&
+             (!('plate' in data) || (data.plate is string && data.plate.size() <= 50)) &&
+             (!('propulsion' in data) || data.propulsion is string);
+    }
+
+    function isValidFuelLog(data) {
+      return hasRequiredFields(['vehicleId', 'date', 'time', 'mileage', 'liters', 'pricePerLiter', 'totalCost']) &&
+             hasOnlyAllowedFields(['id', 'vehicleId', 'date', 'time', 'mileage', 'liters', 'pricePerLiter', 'totalCost', 'stationName', 'address', 'fuelType', 'isHighEfficiency', 'location']) &&
+             (!('id' in data) || data.id is string) &&
+             data.vehicleId is string &&
+             data.date is string && data.date.matches("^\\d{4}-\\d{2}-\\d{2}$") &&
+             data.time is string && data.time.matches("^\\d{1,2}:\\d{2}$") &&
+             data.mileage is number && data.mileage >= 0 &&
+             data.liters is number && data.liters > 0 &&
+             data.pricePerLiter is number && data.pricePerLiter > 0 &&
+             data.totalCost is number && data.totalCost >= 0 &&
+             (!('stationName' in data) || (data.stationName is string && data.stationName.size() <= 100)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 200)) &&
+             (!('fuelType' in data) || (data.fuelType is string && data.fuelType.size() <= 50)) &&
+             (!('isHighEfficiency' in data) || data.isHighEfficiency is bool) &&
+             (!('location' in data) || (data.location is map && data.location.latitude is number && data.location.longitude is number));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+      
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
+                        (request.resource.data.role == resource.data.role || isAdmin())) || isAdmin();
+      
+      allow delete: if isAdmin();
+
+      match /vehicles/{vehicleId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidVehicle(request.resource.data);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /fuelLogs/{logId} {
+        allow read: if isOwner(userId) || isAdmin();
+        
+        allow create: if isOwner(userId) && isValidFuelLog(request.resource.data);
+        
+        allow update: if isOwner(userId) && isValidFuelLog(request.resource.data);
+        
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
