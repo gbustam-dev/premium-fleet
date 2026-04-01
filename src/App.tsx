@@ -428,7 +428,7 @@ const handleFirestoreError = (error: unknown, operationType: OperationType, path
   const readableMsg = error instanceof Error && error.message.includes('permission') 
     ? "Error de permisos: Asegúrate de completar todos los campos obligatorios y que los nombres no excedan los límites."
     : "Error al sincronizar con la base de datos. Por favor intenta de nuevo.";
-  alert(readableMsg);
+  window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: readableMsg, type: 'error' } }));
 };
 
 // --- Proxy Helper ---
@@ -473,6 +473,105 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: any;
 }
+
+const Toast = () => {
+  const [show, setShow] = useState(false);
+  const [message, setMessage] = useState('');
+  const [type, setType] = useState<'success' | 'error' | 'info'>('info');
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const handleToast = (e: CustomEvent) => {
+      setMessage(e.detail.message);
+      setType(e.detail.type || 'info');
+      setShow(true);
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(() => setShow(false), 3000);
+    };
+
+    window.addEventListener('show-toast', handleToast as EventListener);
+    return () => {
+      window.removeEventListener('show-toast', handleToast as EventListener);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 50, scale: 0.9 }}
+          className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-full flex items-center gap-3 shadow-xl ${
+            type === 'success' ? 'bg-success text-white' :
+            type === 'error' ? 'bg-error text-white' :
+            'bg-surface-container-highest text-primary'
+          }`}
+        >
+          {type === 'success' && <CheckCircle2 className="w-5 h-5" />}
+          {type === 'error' && <Zap className="w-5 h-5" />}
+          <span className="text-sm font-bold">{message}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const ConfirmModal = () => {
+  const [show, setShow] = useState(false);
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [onConfirm, setOnConfirm] = useState<() => void>(() => () => {});
+
+  useEffect(() => {
+    const handleConfirm = (e: CustomEvent) => {
+      setTitle(e.detail.title);
+      setMessage(e.detail.message);
+      setOnConfirm(() => e.detail.onConfirm);
+      setShow(true);
+    };
+
+    window.addEventListener('show-confirm', handleConfirm as EventListener);
+    return () => window.removeEventListener('show-confirm', handleConfirm as EventListener);
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-surface/80 backdrop-blur-sm" onClick={() => setShow(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-surface-container-lowest w-full max-w-sm rounded-3xl shadow-xl overflow-hidden border border-outline/10 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold font-headline text-primary mb-2">{title}</h2>
+            <p className="text-sm text-secondary mb-8 leading-relaxed">{message}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShow(false)}
+                className="flex-1 py-3 bg-surface-container-low text-primary rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-surface-variant transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { onConfirm(); setShow(false); }}
+                className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+              >
+                Confirmar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState;
@@ -598,13 +697,19 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
           <div className="pt-6 border-t border-outline/10">
             <h3 className="text-xs font-bold uppercase tracking-widest text-secondary mb-4">Mantenimiento</h3>
             <button 
-              onClick={async () => {
-                if (confirm('¿Actualizar todos los registros a Gasolina 93 y Copec?')) {
-                  setMigrating(true);
-                  await onMigrateLogs();
-                  setMigrating(false);
-                  alert('Registros actualizados correctamente.');
-                }
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('show-confirm', {
+                  detail: {
+                    title: 'Actualizar Registros',
+                    message: '¿Actualizar todos los registros a Gasolina 93 y Copec?',
+                    onConfirm: async () => {
+                      setMigrating(true);
+                      await onMigrateLogs();
+                      setMigrating(false);
+                      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Registros actualizados correctamente.', type: 'success' } }));
+                    }
+                  }
+                }));
               }} 
               disabled={migrating}
               className="w-full py-4 bg-surface-container-low text-primary rounded-xl font-bold uppercase tracking-widest text-xs border border-primary/20 hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
@@ -633,20 +738,19 @@ const TopAppBar = ({ onSettingsClick }: { onSettingsClick: () => void }) => (
 
 const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChange: (tab: string) => void }) => {
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', ariaLabel: 'Tablero principal', icon: LayoutDashboard },
-    { id: 'history', label: 'History', ariaLabel: 'Historial de combustible', icon: HistoryIcon },
+    { id: 'dashboard', label: 'Inicio', ariaLabel: 'Tablero principal', icon: LayoutDashboard },
+    { id: 'history', label: 'Historial', ariaLabel: 'Historial de combustible', icon: HistoryIcon },
     { id: 'new', label: 'Nuevo', ariaLabel: 'Añadir nuevo registro', icon: Plus, isSpecial: true },
     { id: 'map', label: 'Mapa', ariaLabel: 'Mapa de estaciones', icon: MapPin },
-    { id: 'projection', label: 'Proyección', ariaLabel: 'Proyección de costos', icon: Zap },
-    { id: 'stats', label: 'Stats', ariaLabel: 'Estadísticas de consumo', icon: TrendingUp },
-    { id: 'profile', label: 'Profile', ariaLabel: 'Perfil de usuario', icon: User },
+    { id: 'profile', label: 'Perfil', ariaLabel: 'Perfil de usuario', icon: User },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/60 backdrop-blur-xl px-4 pb-8 pt-3 flex justify-around items-center rounded-t-[2rem] shadow-[0_-8px_32px_rgba(26,35,126,0.06)]">
       {tabs.map((tab) => {
         const Icon = tab.icon;
-        const isActive = activeTab === tab.id;
+        // activeTab logic to handle sub-tabs mapping to Dashboard
+        const isActive = activeTab === tab.id || (tab.id === 'dashboard' && ['projection', 'stats'].includes(activeTab));
         
         if (tab.isSpecial) {
           return (
@@ -654,11 +758,9 @@ const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChan
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               aria-label={tab.ariaLabel}
-              className={`flex flex-col items-center justify-center rounded-2xl px-5 py-2 transition-all duration-300 ${
-                isActive ? 'bg-primary-container text-white scale-90' : 'text-secondary'
-              }`}
+              className={`flex flex-col items-center justify-center rounded-2xl px-5 py-2 transition-all duration-300 bg-primary-container text-white shadow-lg active:scale-95 mx-2`}
             >
-              <Icon className="w-6 h-6" />
+              <Icon className="w-8 h-8" />
             </button>
           );
         }
@@ -668,15 +770,18 @@ const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChan
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             aria-label={tab.ariaLabel}
-            className={`flex flex-col items-center justify-center px-4 py-2 transition-colors relative ${
-              isActive ? 'text-primary-container' : 'text-secondary/50'
+            className={`flex flex-col items-center justify-center w-16 transition-colors relative ${
+              isActive ? 'text-primary-container' : 'text-secondary/60 hover:text-secondary'
             }`}
           >
-            <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''}`} />
+            <Icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-current/20' : ''}`} />
+            <span className={`text-[10px] font-bold tracking-tight transition-all ${isActive ? 'opacity-100' : 'opacity-80 font-medium'}`}>
+              {tab.label}
+            </span>
             {isActive && (
               <motion.div 
                 layoutId="navIndicator"
-                className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full"
+                className="absolute -top-3 w-1.5 h-1.5 bg-primary-container rounded-full"
               />
             )}
           </button>
@@ -858,8 +963,8 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
   useEffect(() => { fetchLocalPrices('Gasolina 93'); }, []);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pb-32 pt-24 px-6 max-w-5xl mx-auto">
-      <section className="mt-8 mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="pb-8 max-w-5xl mx-auto">
+      <section className="mt-2 mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-secondary">Control de Costos</span>
           <h2 className="text-4xl font-extrabold font-headline leading-none text-primary tracking-tighter mt-2">Proyección de Gastos</h2>
@@ -969,7 +1074,7 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
   );
 };
 
-const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onNavigateToNew }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void, onNavigateToNew: () => void }) => {
+const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onNavigateToNew, activeSubTab, onSubTabChange, user }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void, onNavigateToNew: () => void, activeSubTab: string, onSubTabChange: (tab: string) => void, user: UserProfile }) => {
   const [viewDate, setViewDate] = useState(new Date());
   
   const handlePrevMonth = () => setViewDate(prev => {
@@ -1084,6 +1189,48 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       exit={{ opacity: 0, y: -20 }}
       className="pb-32 pt-24 px-6 max-w-6xl mx-auto"
     >
+      {/* Sub-Tabs Navigation */}
+      <div className="flex bg-surface-container-low p-1.5 rounded-2xl border border-secondary/5 mb-8 overflow-x-auto no-scrollbar">
+        {[
+          { id: 'dashboard', label: 'Resumen' },
+          { id: 'stats', label: 'Estadísticas' },
+          { id: 'projection', label: 'Proyección' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => onSubTabChange(tab.id)}
+            className={`flex-1 min-w-[100px] py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+              activeSubTab === tab.id
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-secondary hover:bg-surface-variant/50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeSubTab === 'stats' && (
+        <Stats
+          fuelLogs={fuelLogs}
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicleId}
+          onSelectVehicle={onSelectVehicle}
+        />
+      )}
+
+      {activeSubTab === 'projection' && (
+        <Projection
+          user={user}
+          fuelLogs={fuelLogs}
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicleId}
+          onSelectVehicle={onSelectVehicle}
+        />
+      )}
+
+      {activeSubTab === 'dashboard' && (
+      <>
       {/* Month Navigation & Vehicle Selector */}
       <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
         <div className="flex items-center gap-4 bg-surface-container-low p-1.5 rounded-2xl border border-secondary/5">
@@ -1338,13 +1485,17 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
         </div>
       </section>
 
-      {/* FAB */}
-      <button 
-        onClick={onNavigateToNew}
-        className="fixed bottom-28 right-6 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl shadow-[0_8px_32px_rgba(26,35,126,0.25)] flex items-center justify-center active:scale-90 transition-all duration-200 z-50"
-      >
-        <Plus className="w-8 h-8" />
-      </button>
+      </>
+      )}
+
+      {activeSubTab === 'dashboard' && (
+        <button
+          onClick={onNavigateToNew}
+          className="fixed bottom-28 right-6 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl shadow-[0_8px_32px_rgba(26,35,126,0.25)] flex items-center justify-center active:scale-90 transition-all duration-200 z-50"
+        >
+          <Plus className="w-8 h-8" />
+        </button>
+      )}
     </motion.div>
   );
 };
@@ -2375,9 +2526,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="pb-32 pt-24 px-6 max-w-5xl mx-auto"
+      className="pb-8 max-w-5xl mx-auto"
     >
-      <section className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+      <section className="mt-2 mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
         <div>
           <span className="text-xs font-medium uppercase tracking-wider text-secondary">Análisis de Rendimiento</span>
           <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-8 mt-2 border-l-4 border-primary pl-6 py-2">
@@ -2893,6 +3044,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       const propObj = apiPropulsions.find(p => p.nombre === vehicleFormData.propulsion);
       if (!modelObj || !propObj || modelObj.idModelo >= 999000) return; // If local, stop
 
+      setLoadingEff(true);
       try {
         const url = `https://consumovehicular.minenergia.cl/backend/scv/vehiculo?criterio=idModelo:EQ:${modelObj.idModelo};idEtiqueta:EQ:${encodeURIComponent(propObj.idEtiqueta)}`;
         const data = await fetchFromProxy(url);
@@ -2903,6 +3055,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
           setVehicleFormData(prev => ({ ...prev, targetEfficiency: eff }));
         }
       } catch (e) { console.error("Error fetching efficiency:", e); }
+      setLoadingEff(false);
     };
     fetchEfficiency();
   }, [vehicleFormData.propulsion, apiPropulsions, apiModels]);
@@ -2914,7 +3067,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
 
   const handleSaveVehicle = () => {
     if (!vehicleFormData.name) {
-      alert("Por favor ingresa un Nombre (Alias) para tu vehículo");
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: "Por favor ingresa un Nombre (Alias) para tu vehículo", type: 'error' } }));
       return;
     }
     onSaveVehicle({
@@ -2977,10 +3130,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
           }
         }
         
-        alert('Importación completada con éxito');
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Importación completada con éxito', type: 'success' } }));
       } catch (error) {
         console.error('Error importing data:', error);
-        alert('Error al importar el archivo. Asegúrate de que sea un JSON válido.');
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Error al importar el archivo. Asegúrate de que sea un JSON válido.', type: 'error' } }));
       }
     };
     reader.readAsText(file);
@@ -3015,7 +3168,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       if (!vehicle) {
         // Fallback: if still not found, we might need to wait more or handle it differently.
         // For this demo, I'll just use the first vehicle if available or alert.
-        alert('Por favor, intenta de nuevo. El vehículo se está creando.');
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Por favor, intenta de nuevo. El vehículo se está creando.', type: 'error' } }));
         setIsImportingPDF(false);
         return;
       }
@@ -3039,10 +3192,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
         await onSaveLog(log);
       }
       
-      alert('Registros del PDF importados con éxito');
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Registros del PDF importados con éxito', type: 'success' } }));
     } catch (error) {
       console.error('Error importing PDF data:', error);
-      alert('Error al importar los datos del PDF.');
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Error al importar los datos del PDF.', type: 'error' } }));
     } finally {
       setIsImportingPDF(false);
     }
@@ -3120,10 +3273,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
             importedCount++;
           }
         }
-        alert(`Importación de ${importedCount} registros completada con éxito.`);
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: `Importación de ${importedCount} registros completada con éxito.`, type: 'success' } }));
       } catch (error) {
         console.error('Error importing Excel:', error);
-        alert('Error al importar el archivo Excel. Verifica que las columnas coincidan.');
+        window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Error al importar el archivo Excel. Verifica que las columnas coincidan.', type: 'error' } }));
       }
     };
     reader.readAsArrayBuffer(file);
@@ -3574,7 +3727,18 @@ const LogDetails = ({ log, vehicle, fuelLogs, onClose, onEdit, onDelete }: { log
               Editar
             </button>
             <button 
-              onClick={() => { if(confirm('¿Estás seguro de eliminar este registro?')) { onDelete(log.id); onClose(); } }}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('show-confirm', {
+                  detail: {
+                    title: 'Eliminar Registro',
+                    message: '¿Estás seguro de eliminar este registro?',
+                    onConfirm: () => {
+                      onDelete(log.id);
+                      onClose();
+                    }
+                  }
+                }));
+              }}
               className="flex-1 py-4 bg-surface-container-low text-error rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-error/5 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
@@ -3749,7 +3913,7 @@ export default function App() {
       await Promise.all(promises);
     } catch (error) {
       console.error("Migration error:", error);
-      alert("Error al migrar algunos registros.");
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: "Error al migrar algunos registros.", type: 'error' } }));
     }
   };
 
@@ -3781,17 +3945,23 @@ export default function App() {
       ? fuelLogs.filter(log => log.vehicleId === selectedVehicleId)
       : fuelLogs;
 
+    // Use activeTab directly for 'dashboard', 'stats', 'projection'
+    if (['dashboard', 'stats', 'projection'].includes(activeTab)) {
+      return (
+        <Dashboard
+          user={user}
+          activeSubTab={activeTab}
+          onSubTabChange={(tab) => setActiveTab(tab)}
+          fuelLogs={filteredLogs}
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicleId}
+          onSelectVehicle={setSelectedVehicleId}
+          onNavigateToNew={() => { setEditingLog(null); setActiveTab('new'); }}
+        />
+      );
+    }
+
     switch (activeTab) {
-      case 'dashboard':
-        return (
-          <Dashboard 
-            fuelLogs={filteredLogs} 
-            vehicles={vehicles}
-            selectedVehicleId={selectedVehicleId}
-            onSelectVehicle={setSelectedVehicleId}
-            onNavigateToNew={() => { setEditingLog(null); setActiveTab('new'); }} 
-          />
-        );
       case 'history':
         return (
           <History 
@@ -3802,16 +3972,6 @@ export default function App() {
             onEdit={handleEditLog} 
             onDelete={handleDeleteLog} 
             onView={setViewingLog}
-          />
-        );
-      case 'projection':
-        return (
-          <Projection 
-            user={user}
-            fuelLogs={filteredLogs} 
-            vehicles={vehicles}
-            selectedVehicleId={selectedVehicleId}
-            onSelectVehicle={setSelectedVehicleId}
           />
         );
       case 'map':
@@ -3835,15 +3995,6 @@ export default function App() {
             onCancel={() => { setEditingLog(null); setActiveTab('history'); }} 
           />
         );
-      case 'stats':
-        return (
-          <Stats 
-            fuelLogs={filteredLogs} 
-            vehicles={vehicles}
-            selectedVehicleId={selectedVehicleId}
-            onSelectVehicle={setSelectedVehicleId}
-          />
-        );
       case 'profile':
         return (
           <Profile 
@@ -3859,6 +4010,9 @@ export default function App() {
       default:
         return (
           <Dashboard 
+            user={user}
+            activeSubTab="dashboard"
+            onSubTabChange={(tab) => setActiveTab(tab)}
             fuelLogs={filteredLogs} 
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
@@ -3877,6 +4031,8 @@ export default function App() {
           <AnimatePresence mode="wait">
             {renderScreen()}
           </AnimatePresence>
+          <Toast />
+          <ConfirmModal />
           <AnimatePresence>
             {showSettings && (
               <SettingsModal 
