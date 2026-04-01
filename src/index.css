@@ -27,7 +27,33 @@
   }
 }
 
-.consumption-wave {
-  background: linear-gradient(180deg, rgba(26, 35, 126, 0.1) 0%, rgba(26, 35, 126, 0) 100%);
+
+@layer utilities {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .premium-shadow {
+    box-shadow: 0 12px 48px rgba(26, 35, 126, 0.08), 0 4px 12px rgba(0, 0, 0, 0.02);
+  }
+  
+  .chart-container-bg {
+    background: linear-gradient(180deg, rgba(239, 239, 243, 0.5) 0%, rgba(249, 249, 251, 1) 100%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-container;
+  }
+}
+
+.recharts-tooltip-cursor {
+  fill: rgba(26, 35, 126, 0.03) !important;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(26, 35, 126, 0.05);
 }
 

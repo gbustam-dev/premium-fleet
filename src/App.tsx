@@ -25,7 +25,6 @@ import {
   ArrowRight,
   TrendingDown,
   Zap,
-  PiggyBank,
   Edit2,
   Trash2,
   LogOut,
@@ -52,7 +51,6 @@ import {
   Line, 
   AreaChart, 
   Area, 
-  Cell,
   CartesianGrid
 } from 'recharts';
 
@@ -2259,6 +2257,31 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
   );
 };
 
+const CustomTooltip = ({ active, payload, label, unit }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-primary/5 flex flex-col gap-1 min-w-[140px] premium-shadow">
+        <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em] border-b border-primary/5 pb-2 mb-2">{label}</p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm font-bold text-primary">{payload[0].name || unit}</p>
+          <div className="flex items-baseline gap-0.5">
+            <p className="text-lg font-black text-primary-container font-headline tracking-tighter">
+              {typeof payload[0].value === 'number' ? 
+                (unit === 'L' ? formatLiters(payload[0].value) : 
+                 unit === 'KM/L' ? formatEfficiency(payload[0].value) : 
+                 unit === 'KM' ? formatKm(payload[0].value) : 
+                 formatPrice(payload[0].value)) 
+                : payload[0].value}
+            </p>
+            <span className="text-[8px] font-bold text-outline opacity-70 mb-1">{unit}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void }) => {
   const stats = useMemo(() => {
     if (fuelLogs.length === 0) return {
@@ -2268,7 +2291,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       monthlyConsumption: [],
       priceVariation: [],
       efficiencyHistory: [],
-      odometerHistory: []
+      odometerHistory: [],
+      distanceHistory: [],
+      averageEfficiency: 0
     };
 
     const sortedLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -2327,7 +2352,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
 
     const priceVariation = sortedLogs.map((log) => ({
       label: formatMonthYear(new Date(log.date)),
-      price: log.pricePerLiter
+      price: log.pricePerLiter,
+      dateOriginal: log.date
     }));
 
     // Calculate real efficiency history per month
@@ -2343,7 +2369,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       const lits = sortedInMonth.slice(1).reduce((acc, l) => acc + l.liters, 0);
       
       return {
-        month: monthlyData[key].month,
+        month: key,
         value: (dist > 0 && lits > 0) ? parseFloat((dist / lits).toFixed(2)) : 0
       };
     }).filter(h => h.value > 0);
@@ -2375,332 +2401,263 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="pb-32 pt-24 px-6 max-w-5xl mx-auto"
+      className="pb-32 pt-24 px-6 max-w-6xl mx-auto"
     >
       <section className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-        <div>
-          <span className="text-xs font-medium uppercase tracking-wider text-secondary">Análisis de Rendimiento</span>
-          <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-8 mt-2 border-l-4 border-primary pl-6 py-2">
-            <h2 className="text-5xl md:text-7xl font-extrabold font-headline tracking-tight text-primary">Stats</h2>
-            <div className="mb-2">
-              <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Periodo: Mensual</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary ring-4 ring-primary/10"></span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Advanced Analytics</span>
+          </div>
+          <h2 className="text-4xl md:text-6xl font-black font-headline tracking-tighter text-primary">Estadísticas</h2>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="hidden md:block text-[10px] font-bold text-outline uppercase tracking-widest text-right">
+            Visualizando datos de<br/>
+            <span className="text-primary tracking-normal font-black text-xs">{fuelLogs.length} cargas registradas</span>
+          </span>
+          <VehicleSelector 
+            vehicles={vehicles} 
+            selectedVehicleId={selectedVehicleId} 
+            onSelect={onSelectVehicle} 
+          />
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        {/* Main Stats Summary Cards */}
+        <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
+            <div className="w-10 h-10 rounded-2xl bg-primary-container text-white flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
+              <HistoryIcon className="w-5 h-5" />
             </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Cargas</p>
+              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter">{stats.totalRefuels}</h4>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
+            <div className="w-10 h-10 rounded-2xl bg-tertiary-fixed text-on-tertiary-fixed-variant flex items-center justify-center mb-6 shadow-lg shadow-tertiary-fixed/20">
+              <Gauge className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Kilómetros</p>
+              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter">{formatKm(stats.totalKilometers)}</h4>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
+            <div className="w-10 h-10 rounded-2xl bg-[#f5f5f7] text-primary flex items-center justify-center mb-6 border border-primary/5">
+              <Fuel className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">PROM. $/L</p>
+              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter">
+                ${stats.priceVariation.length > 0 ? formatMoney(stats.priceVariation.reduce((a, b) => a + b.price, 0) / stats.priceVariation.length) : '0'}
+              </h4>
+            </div>
+          </div>
+
+          <div className="bg-primary text-white p-6 rounded-[2rem] shadow-2xl premium-shadow relative overflow-hidden group">
+            <div className="z-10 relative">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Eficiencia Media</p>
+              <div className="flex items-baseline gap-1">
+                <h4 className="text-4xl font-black font-headline tracking-tighter group-hover:scale-110 transition-transform origin-left duration-500">
+                  {formatEfficiency(stats.averageEfficiency)}
+                </h4>
+                <span className="text-[10px] font-bold opacity-60">KM/L</span>
+              </div>
+            </div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-all"></div>
+            <Leaf className="absolute top-4 right-4 w-4 h-4 text-tertiary-fixed opacity-40" />
           </div>
         </div>
 
-        <VehicleSelector 
-          vehicles={vehicles} 
-          selectedVehicleId={selectedVehicleId} 
-          onSelect={onSelectVehicle} 
-        />
-      </section>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Monthly Consumption */}
-        <div className="md:col-span-8 bg-surface-container-low p-8 rounded-xl">
-          <div className="flex justify-between items-start mb-10">
+        {/* Efficiency Chart Section */}
+        <div className="md:col-span-8 bg-surface-container-low p-8 rounded-[2.5rem] border border-primary/5 relative overflow-hidden chart-container-bg">
+          <div className="flex justify-between items-start mb-12 relative z-10">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-secondary mb-1">Consumo Mensual</p>
-              <h3 className="font-headline text-2xl font-bold text-primary">Litros por mes</h3>
-            </div>
-            <div className="flex gap-2 items-center">
-              <span className="w-3 h-3 rounded-full bg-primary-container"></span>
-              <span className="text-xs font-bold text-secondary uppercase">Actual</span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Evolución de Rendimiento</p>
+              <h3 className="font-headline text-2xl font-black text-primary tracking-tight">Consumo Real (KM/L)</h3>
             </div>
           </div>
-          <div className="h-64 w-full mt-8 bg-surface-container-lowest/50 rounded-xl">
-            <ResponsiveContainer width="99%" height="100%" debounce={50}>
-              <BarChart data={stats.monthlyConsumption}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(26,35,126,0.05)" />
+          
+          <div className="h-72 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-4 border border-white/50 shadow-inner">
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <AreaChart data={stats.efficiencyHistory}>
+                <defs>
+                  <linearGradient id="colorEffLarge" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1A237E" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#1A237E" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="6 6" vertical={false} />
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#666' }} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  dy={10}
                 />
-                <YAxis hide />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(26,35,126,0.05)' }}
-                  formatter={(value: number) => [formatLiters(value), 'Litros']}
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 8px 32px rgba(26,35,126,0.1)' 
-                  }}
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  dx={-10}
+                  domain={['dataMin - 1', 'dataMax + 1']}
                 />
-                <Bar 
-                  dataKey="liters" 
-                  radius={[6, 6, 0, 0]} 
-                  barSize={30}
-                >
-                  {stats.monthlyConsumption.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.isCurrent ? '#1A237E' : '#9E9E9E'} 
-                      fillOpacity={entry.isCurrent ? 1 : 0.3}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Efficiency Metric */}
-        <div className="md:col-span-4 bg-primary-container text-white p-8 rounded-xl flex flex-col justify-between relative overflow-hidden">
-          <div className="z-10">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-on-primary/60 mb-1">Promedio General</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-6xl font-extrabold font-headline">{formatEfficiency(stats.averageEfficiency)}</span>
-              <span className="text-xs font-medium uppercase tracking-tighter opacity-70">KM/L</span>
-            </div>
-          </div>
-          <div className="z-10 mt-8">
-            <div className="flex items-center gap-2 mb-2">
-              <Leaf className="text-tertiary-fixed w-4 h-4" />
-              <span className="text-xs font-semibold">Eficiencia calculada en tiempo real</span>
-            </div>
-            <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-tertiary-fixed h-full w-[85%]"></div>
-            </div>
-          </div>
-          <div className="absolute -right-4 -bottom-4 w-32 h-32 rounded-full bg-white/5 blur-3xl"></div>
-        </div>
-
-        {/* Price Variation */}
-        <div className="md:col-span-7 bg-surface-container-low p-8 rounded-xl relative overflow-hidden">
-          <div className="flex justify-between items-start mb-8 relative z-10">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-secondary mb-1">Variación de Precio</p>
-              <h3 className="font-headline text-2xl font-bold text-primary">Histórico $/L</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold font-headline text-primary">
-                ${stats.priceVariation.length > 0 ? formatPrice(stats.priceVariation[stats.priceVariation.length - 1].price) : '0'}
-              </p>
-              <p className="text-xs font-bold text-error uppercase">Punto más alto</p>
-            </div>
-          </div>
-          <div className="h-48 mt-10 relative z-10 bg-surface-container-lowest/50 rounded-xl">
-            <ResponsiveContainer width="99%" height="100%" debounce={50}>
-              <LineChart data={stats.priceVariation}>
-                <Tooltip 
-                  formatter={(value: number) => [formatPrice(value), 'Precio/L']}
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 8px 32px rgba(26,35,126,0.1)' 
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="price" 
-                  stroke="#1A237E" 
-                  strokeWidth={4} 
-                  dot={{ r: 6, fill: '#1A237E', strokeWidth: 2, stroke: '#fff' }}
-                  activeDot={{ r: 8, strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex justify-between mt-4 text-xs font-bold uppercase opacity-50 tracking-tighter">
-            {stats.priceVariation.map((v, i) => (
-              <span key={i}>{v.label}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Efficiency KM/L Chart */}
-        <div className="md:col-span-5 bg-surface-container-low p-8 rounded-xl relative overflow-hidden">
-          <div className="flex justify-between items-start mb-8 relative z-10">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-secondary mb-1">Rendimiento</p>
-              <h3 className="font-headline text-2xl font-bold text-primary">KM/L</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold font-headline text-primary">16.4</p>
-              <p className="text-xs font-bold text-tertiary-fixed uppercase">Óptimo</p>
-            </div>
-          </div>
-          <div className="h-48 mt-10 relative z-10 bg-surface-container-lowest/50 rounded-xl">
-            <ResponsiveContainer width="99%" height="100%" debounce={50}>
-              <AreaChart data={stats.efficiencyHistory}>
-                <defs>
-                  <linearGradient id="colorEff" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#94f990" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#94f990" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <Tooltip 
-                  formatter={(value: number) => [formatEfficiency(value), 'KM/L']}
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 8px 32px rgba(26,35,126,0.1)' 
-                  }}
-                />
+                <Tooltip content={<CustomTooltip unit="KM/L" />} />
                 <Area 
                   type="monotone" 
                   dataKey="value" 
-                  stroke="#94f990" 
+                  name="Eficiencia"
+                  stroke="#1A237E" 
                   strokeWidth={4}
                   fillOpacity={1} 
-                  fill="url(#colorEff)" 
+                  fill="url(#colorEffLarge)" 
+                  animationDuration={2000}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-between mt-4 text-xs font-bold uppercase opacity-50 tracking-tighter">
-            {stats.efficiencyHistory.map((v, i) => (
-              <span key={i}>{v.month}</span>
-            ))}
-          </div>
         </div>
 
-        {/* Odometer History Chart */}
-        <div className="md:col-span-12 bg-surface-container-low p-8 rounded-xl">
-          <div className="flex justify-between items-start mb-10">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-secondary mb-1">Uso de Flota</p>
-              <h3 className="font-headline text-2xl font-bold text-primary">Histórico de Odómetro (KM)</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-secondary uppercase">Progreso Acumulado</p>
-            </div>
+        {/* Side Panel: Price Variation */}
+        <div className="md:col-span-4 bg-surface-container-low p-8 rounded-[2.5rem] border border-primary/5 flex flex-col relative overflow-hidden">
+          <div className="mb-10">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-2">Monitor de Precios</p>
+            <h3 className="font-headline text-2xl font-black text-primary tracking-tight">Precio por Litro</h3>
           </div>
-          <div className="h-64 w-full mt-8 bg-surface-container-lowest/50 rounded-xl">
-            <ResponsiveContainer width="99%" height="100%" debounce={50}>
-              <BarChart data={stats.odometerHistory}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(26,35,126,0.05)" />
-                <XAxis 
-                  dataKey="month" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#666' }} 
+          
+          <div className="flex-1 min-h-[250px]">
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <LineChart data={stats.priceVariation}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <Tooltip content={<CustomTooltip unit="$" />} />
+                <Line 
+                  type="stepAfter" 
+                  dataKey="price" 
+                  name="Precio"
+                  stroke="#1A237E" 
+                  strokeWidth={3} 
+                  dot={{ r: 4, fill: '#fff', strokeWidth: 2, stroke: '#1A237E' }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: '#1A237E' }}
+                  animationDuration={1500}
                 />
-                <YAxis hide />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(26,35,126,0.05)' }}
-                  formatter={(value: number) => [formatKm(value), 'KM']}
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 8px 32px rgba(26,35,126,0.1)' 
-                  }}
-                />
-                <Bar 
-                  dataKey="value" 
-                  fill="#1A237E" 
-                  fillOpacity={0.4}
-                  radius={[6, 6, 0, 0]} 
-                  barSize={30}
-                />
-              </BarChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        {/* Monthly Distance Chart */}
-        <div className="md:col-span-12 bg-surface-container-low p-8 rounded-xl">
-          <div className="flex justify-between items-start mb-10">
+          
+          <div className="mt-8 pt-6 border-t border-primary/5 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-secondary mb-1">Actividad Mensual</p>
-              <h3 className="font-headline text-2xl font-bold text-primary">Kilómetros Recorridos por Mes</h3>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold font-headline text-primary">
-                {stats.distanceHistory.length > 0 ? formatKm(stats.distanceHistory[stats.distanceHistory.length - 1].value) : 0}
+              <p className="text-[10px] font-bold text-secondary uppercase opacity-50">Variación máx.</p>
+              <p className="text-sm font-black text-primary">
+                ${stats.priceVariation.length > 1 ? formatMoney(Math.max(...stats.priceVariation.map(v => v.price)) - Math.min(...stats.priceVariation.map(v => v.price))) : 0}
               </p>
-              <p className="text-xs font-bold text-secondary uppercase">KM este mes</p>
+            </div>
+            <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>
+              {stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'Tendencia alcista' : 'A la baja'}
             </div>
           </div>
-          <div className="h-64 w-full mt-8 bg-surface-container-lowest/50 rounded-xl">
-            <ResponsiveContainer width="99%" height="100%" debounce={50}>
-              <BarChart data={stats.distanceHistory}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(26,35,126,0.05)" />
+        </div>
+
+        {/* Bottom Section: Monthly Activity */}
+        <div className="md:col-span-12 bg-surface-container-low p-8 rounded-[2.5rem] border border-primary/5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Actividad de Flota</p>
+              <h3 className="font-headline text-2xl font-black text-primary tracking-tight">Consumo y Distancia Mensual</h3>
+            </div>
+            <div className="flex gap-4 p-1 bg-white/50 backdrop-blur-sm rounded-2xl border border-primary/5">
+              <div className="flex items-center gap-2 px-4 py-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Kilómetros</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 border-l border-primary/5">
+                <span className="w-2.5 h-2.5 rounded-full bg-tertiary-fixed"></span>
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Litros</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="h-80 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+              <BarChart data={stats.distanceHistory.map((d, i) => ({
+                ...d,
+                liters: stats.monthlyConsumption[i]?.liters || 0
+              }))}>
+                <CartesianGrid strokeDasharray="6 6" vertical={false} />
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#666' }} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  dy={10}
                 />
                 <YAxis hide />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(26,35,126,0.05)' }}
-                  formatter={(value: number) => [formatKm(value), 'KM']}
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 8px 32px rgba(26,35,126,0.1)' 
-                  }}
-                />
+                <Tooltip content={<CustomTooltip unit="KM" />} cursor={{ fill: 'rgba(26, 35, 126, 0.02)' }} />
                 <Bar 
                   dataKey="value" 
+                  name="Distancia"
+                  fill="#1A237E" 
+                  radius={[12, 12, 0, 0]} 
+                  barSize={32}
+                  animationDuration={1500}
+                />
+                <Bar 
+                  dataKey="liters" 
+                  name="Combustible"
                   fill="#94f990" 
-                  fillOpacity={0.6}
-                  radius={[6, 6, 0, 0]} 
-                  barSize={30}
+                  radius={[12, 12, 0, 0]} 
+                  barSize={12}
+                  animationDuration={2000}
                 />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Tips Section */}
-        <div className="md:col-span-5 flex flex-col gap-6">
-          <div className="bg-surface-container-low p-8 rounded-xl flex-1 flex flex-col">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center">
-                <Zap className="text-on-tertiary-fixed-variant w-5 h-5" />
+        {/* Small Insights Grid */}
+        <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-[#f0f0f5] p-8 rounded-[2rem] border border-primary/5 group hover:bg-primary transition-colors duration-500">
+            <div className="flex items-center gap-4 mb-4">
+              <Zap className="w-5 h-5 text-primary group-hover:text-tertiary-fixed transition-colors" />
+              <h5 className="font-bold text-primary group-hover:text-white transition-colors">Ahorro Estimado</h5>
+            </div>
+            <p className="text-secondary text-xs leading-relaxed group-hover:text-white/70 transition-colors">
+              Optimizar tus rutas podría incrementar tu ahorro de <span className="font-black text-primary group-hover:text-white">${formatMoney(stats.estimatedSavings)}</span> hasta en un 15% adicional.
+            </p>
+          </div>
+
+          <div className="bg-[#fcfcfc] p-8 rounded-[2rem] border border-primary/5 shadow-sm">
+            <div className="flex items-center gap-4 mb-4">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h5 className="font-bold text-primary">Frecuencia de Carga</h5>
+            </div>
+            <p className="text-secondary text-xs leading-relaxed">
+              Cargas promedio cada <span className="font-black text-primary">
+                {stats.monthlyConsumption.length > 0 ? (stats.totalRefuels / stats.monthlyConsumption.length).toFixed(1) : 0}
+              </span> veces al mes. Mantener el tanque sobre 1/4 mejora la vida de la bomba.
+            </p>
+          </div>
+
+          <div className="bg-primary-container p-8 rounded-[2rem] text-white overflow-hidden relative">
+            <div className="z-10 relative">
+              <h5 className="font-black mb-1">Reporte Predictivo</h5>
+              <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-4">Próximo Mes</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black font-headline">
+                   ${formatMoney(stats.totalKilometers > 0 ? (stats.totalKilometers / stats.averageEfficiency) * (stats.priceVariation[stats.priceVariation.length-1]?.price || 1100) / (stats.monthlyConsumption.length || 1) : 0)}
+                </span>
+                <span className="text-[10px] font-bold opacity-60">CLP EST.</span>
               </div>
-              <h4 className="font-headline font-bold text-lg text-primary">Mejores consejos</h4>
             </div>
-            <div className="space-y-6">
-              {[
-                { id: '01', title: 'Presión de neumáticos', desc: 'Mantener la presión correcta puede reducir el consumo hasta un 3% en viajes largos.' },
-                { id: '02', title: 'Carga innecesaria', desc: 'Detectamos 40kg extras frecuentes. Vaciar el maletero mejora tu eficiencia en un 1.5%.' },
-                { id: '03', title: 'Velocidad crucero', desc: 'Tu consumo sube drásticamente a partir de los 110km/h. Mantén la calma para ahorrar.' }
-              ].map((tip) => (
-                <div key={tip.id} className="flex gap-4 items-start">
-                  <span className="text-2xl font-black font-headline text-outline-variant opacity-30 leading-none">{tip.id}</span>
-                  <div>
-                    <p className="text-sm font-bold mb-1 text-primary">{tip.title}</p>
-                    <p className="text-xs text-secondary leading-relaxed">{tip.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button className="mt-8 py-4 px-6 bg-primary-container text-white rounded-lg font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 group transition-all duration-300 hover:shadow-xl active:scale-95">
-              Ver Reporte Completo
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </button>
+            <TrendingUp className="absolute -right-6 -bottom-6 w-32 h-32 text-white/5 opacity-40 rotate-12" />
           </div>
         </div>
       </div>
-
-      {/* Secondary Insights */}
-      <section className="mt-12 mb-20 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface-container-low p-6 rounded-xl flex flex-col items-center text-center">
-          <Fuel className="text-primary w-6 h-6 mb-4" />
-          <p className="text-3xl font-bold font-headline text-primary">{stats.totalRefuels}</p>
-          <p className="text-xs font-bold uppercase tracking-widest opacity-60">Repostajes totales</p>
-        </div>
-        <div className="bg-surface-container-low p-6 rounded-xl flex flex-col items-center text-center">
-          <ArrowRight className="text-primary w-6 h-6 mb-4 rotate-[-45deg]" />
-          <p className="text-3xl font-bold font-headline text-primary">{formatKm(stats.totalKilometers)}</p>
-          <p className="text-xs font-bold uppercase tracking-widest opacity-60">Kilómetros totales</p>
-        </div>
-        <div className="bg-surface-container-low p-6 rounded-xl flex flex-col items-center text-center">
-          <PiggyBank className="text-primary w-6 h-6 mb-4" />
-          <p className="text-3xl font-bold font-headline text-primary">${formatMoney(stats.estimatedSavings)}</p>
-          <p className="text-xs font-bold uppercase tracking-widest opacity-60">Ahorro estimado</p>
-        </div>
-      </section>
     </motion.div>
   );
 };
