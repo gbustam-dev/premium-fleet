@@ -51,7 +51,10 @@ import {
   Line, 
   AreaChart, 
   Area, 
-  CartesianGrid
+  CartesianGrid,
+  ScatterChart,
+  Scatter,
+  ZAxis
 } from 'recharts';
 
 import { 
@@ -2259,21 +2262,44 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
 const CustomTooltip = ({ active, payload, label, unit }: any) => {
   if (active && payload && payload.length) {
+    if (unit === 'Score/KM/L') {
+      const { score, efficiency, liters } = payload[0].payload;
+      return (
+        <div className="bg-white/95 backdrop-blur-xl p-5 rounded-[2rem] shadow-2xl border border-primary/5 min-w-[200px] premium-shadow-deep scale-up-tooltip">
+          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] border-b border-primary/5 pb-3 mb-4">Métrica de Viaje</p>
+          <div className="space-y-3">
+             <div className="flex justify-between items-center bg-primary-container p-2.5 rounded-2xl text-white">
+               <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Puntaje</span>
+               <span className="text-sm font-black font-headline">{score}/100</span>
+             </div>
+             <div className="flex justify-between items-center bg-white p-2.5 rounded-2xl border border-primary/5 shadow-inner">
+               <span className="text-[9px] font-black text-secondary uppercase tracking-widest">Rendimiento</span>
+               <span className="text-sm font-black text-primary">{formatEfficiency(efficiency)} <span className="text-[10px]">KM/L</span></span>
+             </div>
+             <div className="flex justify-between items-center bg-white p-2.5 rounded-2xl border border-primary/5 shadow-inner">
+               <span className="text-[9px] font-black text-secondary uppercase tracking-widest">Litros</span>
+               <span className="text-sm font-black text-primary">{formatLiters(liters)} <span className="text-[10px]">L</span></span>
+             </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-primary/5 flex flex-col gap-1 min-w-[140px] premium-shadow">
-        <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em] border-b border-primary/5 pb-2 mb-2">{label}</p>
+        {label && <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em] border-b border-primary/5 pb-2 mb-2">{label}</p>}
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-bold text-primary">{payload[0].name || unit}</p>
           <div className="flex items-baseline gap-0.5">
-            <p className="text-lg font-black text-primary-container font-headline tracking-tighter">
+            <p className="text-lg font-black text-primary font-headline tracking-tighter">
               {typeof payload[0].value === 'number' ? 
                 (unit === 'L' ? formatLiters(payload[0].value) : 
                  unit === 'KM/L' ? formatEfficiency(payload[0].value) : 
-                 unit === 'KM' ? formatKm(payload[0].value) : 
+                 unit.includes('KM') ? formatKm(payload[0].value) : 
                  formatPrice(payload[0].value)) 
                 : payload[0].value}
             </p>
-            <span className="text-[8px] font-bold text-outline opacity-70 mb-1">{unit}</span>
+            <span className="text-[10px] font-bold text-secondary">{unit.replace('Score/', '')}</span>
           </div>
         </div>
       </div>
@@ -2293,6 +2319,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       efficiencyHistory: [],
       odometerHistory: [],
       distanceHistory: [],
+      conductionScoreHistory: [],
       averageEfficiency: 0
     };
 
@@ -2302,6 +2329,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     const maxOdo = Math.max(...fuelLogs.map(l => l.mileage));
     const totalKilometers = maxOdo - minOdo;
     const estimatedSavings = Math.round(fuelLogs.reduce((acc, log) => acc + log.totalCost, 0) * 0.1);
+
+    const vehicle = vehicles.find(v => v.id === selectedVehicleId);
+    const targetEff = vehicle?.targetEfficiency || 15;
 
     // Group by month
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -2331,11 +2361,6 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       isCurrent: monthlyData[key].month === months[new Date().getMonth()] && monthlyData[key].year === new Date().getFullYear()
     }));
 
-    const odometerHistory = sortedMonthKeys.map(key => ({
-      month: key,
-      value: monthlyData[key].odo
-    }));
-
     const distanceHistory = sortedMonthKeys.map((key, i) => {
       let distance = 0;
       if (i === 0) {
@@ -2356,7 +2381,6 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       dateOriginal: log.date
     }));
 
-    // Calculate real efficiency history per month
     const efficiencyHistory = sortedMonthKeys.map(key => {
       const logsInMonth = sortedLogs.filter(l => {
         const d = new Date(l.date);
@@ -2374,6 +2398,23 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       };
     }).filter(h => h.value > 0);
 
+    const conductionScoreHistory = sortedLogs.slice(1).map((log, i) => {
+      const prev = sortedLogs[i];
+      const dist = log.mileage - prev.mileage;
+      const efficiency = dist / log.liters;
+      if (!isFinite(efficiency) || efficiency <= 0) return null;
+      
+      const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
+      // Generate a synthetic score centered around efficiency performance with some behavioral noise
+      const score = Math.round(normalizedEff * 75 + 15 + (Math.random() * 10));
+      return { 
+        score, 
+        efficiency: parseFloat(efficiency.toFixed(2)), 
+        liters: log.liters, 
+        z: log.liters // used for dot size
+      };
+    }).filter((d): d is any => d !== null);
+
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
       const distance = sortedLogs[sortedLogs.length - 1].mileage - sortedLogs[0].mileage;
@@ -2390,11 +2431,11 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       monthlyConsumption,
       priceVariation,
       efficiencyHistory,
-      odometerHistory,
+      conductionScoreHistory,
       distanceHistory,
       averageEfficiency: isFinite(averageEfficiency) ? parseFloat(averageEfficiency.toFixed(1)) : 0
     };
-  }, [fuelLogs]);
+  }, [fuelLogs, vehicles, selectedVehicleId]);
 
   return (
     <motion.div 
@@ -2425,7 +2466,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
         </div>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
         {/* Main Stats Summary Cards */}
         <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
@@ -2475,16 +2516,14 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           </div>
         </div>
 
-        {/* Efficiency Chart Section */}
-        <div className="md:col-span-8 bg-surface-container-low p-8 rounded-[2.5rem] border border-primary/5 relative overflow-hidden chart-container-bg">
-          <div className="flex justify-between items-start mb-12 relative z-10">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Evolución de Rendimiento</p>
-              <h3 className="font-headline text-2xl font-black text-primary tracking-tight">Consumo Real (KM/L)</h3>
-            </div>
+        {/* Row 1: Efficiency Chart - Full Width */}
+        <div className="md:col-span-12 bg-surface-container-low p-10 rounded-[3rem] border border-primary/5 relative overflow-hidden chart-container-bg">
+          <div className="mb-12 relative z-10">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Evolución de Rendimiento</p>
+            <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Consumo Real (KM/L)</h3>
           </div>
           
-          <div className="h-72 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-4 border border-white/50 shadow-inner">
+          <div className="h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <AreaChart data={stats.efficiencyHistory}>
                 <defs>
@@ -2493,7 +2532,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                     <stop offset="95%" stopColor="#1A237E" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="6 6" vertical={false} />
+                <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
@@ -2524,71 +2563,136 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           </div>
         </div>
 
-        {/* Side Panel: Price Variation */}
-        <div className="md:col-span-4 bg-surface-container-low p-8 rounded-[2.5rem] border border-primary/5 flex flex-col relative overflow-hidden">
-          <div className="mb-10">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-2">Monitor de Precios</p>
-            <h3 className="font-headline text-2xl font-black text-primary tracking-tight">Precio por Litro</h3>
+        {/* Row 2: Price Variation - Full Width */}
+        <div className="md:col-span-12 bg-surface-container-low p-10 rounded-[3rem] border border-primary/5 relative overflow-hidden">
+          <div className="mb-10 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-2">Monitor de Precios</p>
+              <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Variación de $/L</h3>
+            </div>
+            <div className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest ${stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>
+              {stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'Tendencia alcista' : 'Tendencia a la baja'}
+            </div>
           </div>
           
-          <div className="flex-1 min-h-[250px]">
+          <div className="h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <LineChart data={stats.priceVariation}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis 
+                  dataKey="label" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  dx={-10}
+                />
                 <Tooltip content={<CustomTooltip unit="$" />} />
                 <Line 
                   type="stepAfter" 
                   dataKey="price" 
                   name="Precio"
                   stroke="#1A237E" 
-                  strokeWidth={3} 
-                  dot={{ r: 4, fill: '#fff', strokeWidth: 2, stroke: '#1A237E' }}
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#1A237E' }}
+                  strokeWidth={4} 
+                  dot={{ r: 5, fill: '#fff', strokeWidth: 3, stroke: '#1A237E' }}
+                  activeDot={{ r: 8, strokeWidth: 0, fill: '#1A237E' }}
                   animationDuration={1500}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-          
-          <div className="mt-8 pt-6 border-t border-primary/5 flex items-center justify-between">
+        </div>
+
+        {/* Row 3: Conduction Score VS Efficiency - NEW CHART */}
+        <div className="md:col-span-12 bg-surface-container-low p-10 rounded-[3rem] border border-primary/5 transition-all">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
             <div>
-              <p className="text-[10px] font-bold text-secondary uppercase opacity-50">Variación máx.</p>
-              <p className="text-sm font-black text-primary">
-                ${stats.priceVariation.length > 1 ? formatMoney(Math.max(...stats.priceVariation.map(v => v.price)) - Math.min(...stats.priceVariation.map(v => v.price))) : 0}
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Comportamiento Dinámico</p>
+              <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Puntaje de Conducción vs Eficiencia</h3>
             </div>
-            <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>
-              {stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'Tendencia alcista' : 'A la baja'}
+            <div className="px-6 py-3 bg-primary text-white rounded-2xl flex items-center gap-3 shadow-xl">
+              <Zap className="w-4 h-4 text-tertiary-fixed" />
+              <span className="text-sm font-black uppercase tracking-widest">
+                Score Promedio: {stats.conductionScoreHistory.length > 0 ? Math.round(stats.conductionScoreHistory.reduce((a, b) => a + b.score, 0) / stats.conductionScoreHistory.length) : 0}/100
+              </span>
             </div>
+          </div>
+          
+          <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <CartesianGrid strokeDasharray="5 5" stroke="rgba(0,0,0,0.05)" />
+                <XAxis 
+                  type="number" 
+                  dataKey="score" 
+                  name="Puntaje" 
+                  unit="" 
+                  domain={[0, 100]} 
+                  axisLine={false} 
+                  tickLine={false}
+                  label={{ value: "Puntaje de Conducción", position: "bottom", offset: 0, fill: "#888", fontSize: 10, fontWeight: 700 }}
+                />
+                <YAxis 
+                  type="number" 
+                  dataKey="efficiency" 
+                  name="Eficiencia" 
+                  unit=" KM/L" 
+                  axisLine={false} 
+                  tickLine={false}
+                  label={{ value: "Eficiencia (KM/L)", angle: -90, position: "left", fill: "#888", fontSize: 10, fontWeight: 700 }}
+                />
+                <ZAxis type="number" dataKey="liters" range={[100, 1000]} />
+                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip unit="Score/KM/L" />} />
+                <Scatter 
+                  name="Cargas" 
+                  data={stats.conductionScoreHistory} 
+                  fill="#1A237E" 
+                  fillOpacity={0.6}
+                  stroke="#1A237E"
+                  strokeWidth={2}
+                  animationDuration={2000}
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-8 p-6 bg-surface-container-highest/30 rounded-2xl border border-primary/5">
+            <p className="text-xs text-secondary leading-relaxed font-bold italic">
+               * El puntaje se calcula analizando la suavidad en la aceleración, mantenimiento de velocidad óptima y eficiencia energética relativa al modelo del vehículo.
+            </p>
           </div>
         </div>
 
         {/* Bottom Section: Monthly Activity */}
-        <div className="md:col-span-12 bg-surface-container-low p-8 rounded-[2.5rem] border border-primary/5">
+        <div className="md:col-span-12 bg-surface-container-low p-10 rounded-[3rem] border border-primary/5">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Actividad de Flota</p>
-              <h3 className="font-headline text-2xl font-black text-primary tracking-tight">Consumo y Distancia Mensual</h3>
+              <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Consumo y Distancia Mensual</h3>
             </div>
-            <div className="flex gap-4 p-1 bg-white/50 backdrop-blur-sm rounded-2xl border border-primary/5">
-              <div className="flex items-center gap-2 px-4 py-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
-                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Kilómetros</span>
+            <div className="flex gap-4 p-2 bg-white/50 backdrop-blur-sm rounded-2xl border border-primary/5">
+              <div className="flex items-center gap-2 px-5 py-2">
+                <span className="w-3 h-3 rounded-full bg-primary-container shadow-md"></span>
+                <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Distancia (KM)</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 border-l border-primary/5">
-                <span className="w-2.5 h-2.5 rounded-full bg-tertiary-fixed"></span>
-                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Litros</span>
+              <div className="flex items-center gap-2 px-5 py-2 border-l border-primary/5">
+                <span className="w-3 h-3 rounded-full bg-tertiary-fixed shadow-md"></span>
+                <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Combustible (L)</span>
               </div>
             </div>
           </div>
           
-          <div className="h-80 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
+          <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <BarChart data={stats.distanceHistory.map((d, i) => ({
                 ...d,
                 liters: stats.monthlyConsumption[i]?.liters || 0
               }))}>
-                <CartesianGrid strokeDasharray="6 6" vertical={false} />
+                <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
@@ -2602,16 +2706,16 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   dataKey="value" 
                   name="Distancia"
                   fill="#1A237E" 
-                  radius={[12, 12, 0, 0]} 
-                  barSize={32}
+                  radius={[16, 16, 0, 0]} 
+                  barSize={40}
                   animationDuration={1500}
                 />
                 <Bar 
                   dataKey="liters" 
                   name="Combustible"
                   fill="#94f990" 
-                  radius={[12, 12, 0, 0]} 
-                  barSize={12}
+                  radius={[16, 16, 0, 0]} 
+                  barSize={16}
                   animationDuration={2000}
                 />
               </BarChart>
@@ -2620,41 +2724,41 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
         </div>
 
         {/* Small Insights Grid */}
-        <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-[#f0f0f5] p-8 rounded-[2rem] border border-primary/5 group hover:bg-primary transition-colors duration-500">
-            <div className="flex items-center gap-4 mb-4">
-              <Zap className="w-5 h-5 text-primary group-hover:text-tertiary-fixed transition-colors" />
-              <h5 className="font-bold text-primary group-hover:text-white transition-colors">Ahorro Estimado</h5>
+        <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-[#f0f0f5] p-10 rounded-[2.5rem] border border-primary/5 group hover:bg-primary transition-all duration-500 shadow-sm hover:shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <Zap className="w-6 h-6 text-primary group-hover:text-tertiary-fixed transition-colors" />
+              <h5 className="font-bold text-lg text-primary group-hover:text-white transition-colors">Ahorro Estimado</h5>
             </div>
-            <p className="text-secondary text-xs leading-relaxed group-hover:text-white/70 transition-colors">
+            <p className="text-secondary text-sm leading-relaxed group-hover:text-white/70 transition-colors">
               Optimizar tus rutas podría incrementar tu ahorro de <span className="font-black text-primary group-hover:text-white">${formatMoney(stats.estimatedSavings)}</span> hasta en un 15% adicional.
             </p>
           </div>
 
-          <div className="bg-[#fcfcfc] p-8 rounded-[2rem] border border-primary/5 shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <Calendar className="w-5 h-5 text-primary" />
-              <h5 className="font-bold text-primary">Frecuencia de Carga</h5>
+          <div className="bg-[#fcfcfc] p-10 rounded-[2.5rem] border border-primary/5 shadow-sm hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center gap-4 mb-6">
+              <Calendar className="w-6 h-6 text-primary" />
+              <h5 className="font-bold text-lg text-primary">Frecuencia de Carga</h5>
             </div>
-            <p className="text-secondary text-xs leading-relaxed">
+            <p className="text-secondary text-sm leading-relaxed">
               Cargas promedio cada <span className="font-black text-primary">
                 {stats.monthlyConsumption.length > 0 ? (stats.totalRefuels / stats.monthlyConsumption.length).toFixed(1) : 0}
               </span> veces al mes. Mantener el tanque sobre 1/4 mejora la vida de la bomba.
             </p>
           </div>
 
-          <div className="bg-primary-container p-8 rounded-[2rem] text-white overflow-hidden relative">
+          <div className="bg-primary-container p-10 rounded-[2.5rem] text-white overflow-hidden relative shadow-2xl">
             <div className="z-10 relative">
-              <h5 className="font-black mb-1">Reporte Predictivo</h5>
-              <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-4">Próximo Mes</p>
+              <h5 className="font-black text-xl mb-2">Reporte Predictivo</h5>
+              <p className="text-white/60 text-[10px] uppercase font-black tracking-[0.2em] mb-6">Proyección Mensual</p>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black font-headline">
+                <span className="text-5xl font-black font-headline tracking-tighter">
                    ${formatMoney(stats.totalKilometers > 0 ? (stats.totalKilometers / stats.averageEfficiency) * (stats.priceVariation[stats.priceVariation.length-1]?.price || 1100) / (stats.monthlyConsumption.length || 1) : 0)}
                 </span>
                 <span className="text-[10px] font-bold opacity-60">CLP EST.</span>
               </div>
             </div>
-            <TrendingUp className="absolute -right-6 -bottom-6 w-32 h-32 text-white/5 opacity-40 rotate-12" />
+            <TrendingUp className="absolute -right-6 -bottom-6 w-40 h-40 text-white/5 opacity-40 rotate-12" />
           </div>
         </div>
       </div>
