@@ -55,8 +55,7 @@ import {
   ZAxis,
   ReferenceLine,
   ReferenceArea,
-  Cell,
-  LabelList
+  Cell
 } from 'recharts';
 
 import { 
@@ -2406,22 +2405,18 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
       const score = Math.round(normalizedEff * 75 + 15 + (Math.random() * 10));
       
-      // Increased Jitter to avoid perfect overlap
-      const displayScore = score + (Math.random() * 4 - 2);
-      const displayEfficiency = efficiency + (Math.random() * 0.8 - 0.4);
-
       return { 
         score,
         efficiency: parseFloat(efficiency.toFixed(2)),
-        displayScore,
-        displayEfficiency,
+        displayScore: score,
+        displayEfficiency: efficiency,
         liters: log.liters, 
         z: log.liters,
         label: `Carga #${i + 2}`,
-        shortLabel: `#${i + 2}`,
         displayLabel: formatMonthYear(new Date(log.date)),
         fullDate: log.date,
-        color: `hsl(${220 + (i * 20) % 60}, 60%, 40%)` // Dynamic color per carga
+        // Progresión de color: más claro para antiguas, más intenso para recientes
+        color: `hsl(220, 70%, ${70 - (i / sortedLogs.length) * 40}%)` 
       };
     }).filter((d): d is any => d !== null);
 
@@ -2686,14 +2681,12 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   name="Cargas" 
                   data={stats.conductionScoreHistory} 
                   strokeWidth={2}
-                  fillOpacity={0.6}
+                  fillOpacity={0.5}
                   animationDuration={2000}
                 >
                   {stats.conductionScoreHistory.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="white" strokeWidth={0.5} />
                   ))}
-                  {/* @ts-ignore */}
-                  <LabelList dataKey="shortLabel" position="top" style={{ fontSize: '10px', fontWeight: '900', fill: '#1A237E' }} offset={10} />
                 </Scatter>
               </ScatterChart>
             </ResponsiveContainer>
