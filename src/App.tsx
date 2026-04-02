@@ -591,7 +591,7 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold font-headline text-primary">Configuración de IA</h2>
-          <button onClick={onClose} className="p-2 bg-surface-variant hover:bg-outline/10 rounded-full transition-colors">
+          <button aria-label="Cerrar configuración" onClick={onClose} className="p-2 bg-surface-variant hover:bg-outline/10 rounded-full transition-colors">
             <Plus className="w-5 h-5 rotate-45 text-secondary" />
           </button>
         </div>
@@ -641,7 +641,7 @@ const TopAppBar = ({ onSettingsClick }: { onSettingsClick: () => void }) => (
       <Car className="text-primary-container w-6 h-6" />
       <h1 className="text-xl font-bold text-primary-container font-headline">Premium Fleet</h1>
     </div>
-    <button onClick={onSettingsClick} className="p-2 rounded-full hover:bg-surface-variant transition-colors">
+    <button aria-label="Abrir configuración" onClick={onSettingsClick} className="p-2 rounded-full hover:bg-surface-variant transition-colors">
       <Settings className="text-secondary w-5 h-5" />
     </button>
   </header>
@@ -1104,6 +1104,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
         <div className="flex items-center gap-4 bg-surface-container-low p-1.5 rounded-2xl border border-secondary/5">
           <button 
+            aria-label="Mes anterior"
             onClick={handlePrevMonth}
             className="p-3 hover:bg-surface-variant rounded-xl transition-colors text-primary"
           >
@@ -1114,6 +1115,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
             <h3 className="text-lg font-extrabold font-headline text-primary capitalize">{formatMonthYear(viewDate)}</h3>
           </div>
           <button 
+            aria-label="Mes siguiente"
             onClick={handleNextMonth}
             disabled={isCurrentMonth}
             className={`p-3 rounded-xl transition-colors ${isCurrentMonth ? 'text-outline/20' : 'hover:bg-surface-variant text-primary'}`}
@@ -1356,6 +1358,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
 
       {/* FAB */}
       <button 
+        aria-label="Añadir nuevo registro"
         onClick={onNavigateToNew}
         className="fixed bottom-28 right-6 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl shadow-[0_8px_32px_rgba(26,35,126,0.25)] flex items-center justify-center active:scale-90 transition-all duration-200 z-50"
       >
@@ -1412,6 +1415,7 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
                 
                 <div className="absolute bottom-4 right-4 md:top-4 md:bottom-auto flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
+                    aria-label="Editar registro"
                     onClick={(e) => { e.stopPropagation(); onEdit(log); }}
                     className="p-2 bg-surface-container-low rounded-full text-primary hover:bg-primary hover:text-white transition-colors"
                     title="Editar"
@@ -1419,6 +1423,7 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button 
+                    aria-label="Eliminar registro"
                     onClick={(e) => { e.stopPropagation(); onDelete(log.id); }}
                     className="p-2 bg-surface-container-low rounded-full text-error hover:bg-error hover:text-white transition-colors"
                     title="Eliminar"
@@ -2031,6 +2036,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                 }}
               />
               <button 
+                aria-label="Buscar estaciones cercanas"
                 type="button"
                 onClick={() => {
                   if (location) {
@@ -2858,6 +2864,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
   const [apiModels, setApiModels] = useState<{idModelo: number, nombre: string}[]>([]);
   const [apiPropulsions, setApiPropulsions] = useState<{idEtiqueta: string, nombre: string}[]>([]);
   const [loadingApi, setLoadingApi] = useState(false);
+  const [loadingEff] = useState(false);
   // @ts-ignore
   const [loadingEff, setLoadingEff] = useState(false);
 
@@ -3221,7 +3228,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
             className="w-32 h-32 rounded-full border-4 border-primary-container shadow-xl object-cover"
             referrerPolicy="no-referrer"
           />
-          <button className="absolute bottom-0 right-0 bg-primary-container text-white p-2 rounded-full shadow-lg">
+          <button aria-label="Cambiar avatar" className="absolute bottom-0 right-0 bg-primary-container text-white p-2 rounded-full shadow-lg">
             <Settings className="w-4 h-4" />
           </button>
         </div>
@@ -3298,6 +3305,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold font-headline text-primary">Mis Vehículos</h2>
             <button 
+              aria-label="Añadir nuevo vehículo"
               onClick={() => {
                 setEditingVehicle(null);
                 setVehicleFormData({ name: '', make: '', model: '', year: new Date().getFullYear(), plate: '', targetEfficiency: 10, propulsion: '' });
@@ -3452,12 +3460,14 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
+                      aria-label="Editar vehículo"
                       onClick={() => startEditVehicle(v)}
                       className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
                     <button 
+                      aria-label="Eliminar vehículo"
                       onClick={() => onDeleteVehicle(v.id)}
                       className="p-2 text-error hover:bg-error/10 rounded-full transition-colors"
                     >
@@ -3581,6 +3591,7 @@ const LogDetails = ({ log, vehicle, fuelLogs, onClose, onEdit, onDelete }: { log
             <Fuel className="text-white w-20 h-20 relative z-10" />
           )}
           <button 
+            aria-label="Cerrar detalles"
             onClick={onClose}
             className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
           >
