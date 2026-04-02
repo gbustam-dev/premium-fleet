@@ -42,8 +42,6 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   ResponsiveContainer, 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   Tooltip, 
@@ -55,7 +53,9 @@ import {
   ZAxis,
   ReferenceLine,
   ReferenceArea,
-  Cell
+  Cell,
+  ComposedChart,
+  Bar
 } from 'recharts';
 
 import { 
@@ -2705,13 +2705,13 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Actividad de Flota</p>
               <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Consumo y Distancia por Carga</h3>
             </div>
-            <div className="flex gap-4 p-2 bg-white/50 backdrop-blur-sm rounded-2xl border border-primary/5">
-              <div className="flex items-center gap-2 px-5 py-2">
-                <span className="w-3 h-3 rounded-full bg-primary-container shadow-md"></span>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-[#1A237E] shadow-md"></span>
                 <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Distancia (KM)</span>
               </div>
               <div className="flex items-center gap-2 px-5 py-2 border-l border-primary/5">
-                <span className="w-3 h-3 rounded-full bg-tertiary-fixed shadow-md"></span>
+                <span className="w-3 h-3 rounded-full bg-[#4CAF50] shadow-md"></span>
                 <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Combustible (L)</span>
               </div>
             </div>
@@ -2719,7 +2719,13 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           
           <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart data={stats.distanceHistory}>
+              <ComposedChart data={stats.distanceHistory}>
+                <defs>
+                  <linearGradient id="colorLiters" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4CAF50" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#4CAF50" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="label" 
@@ -2729,25 +2735,42 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
                   dy={10}
                 />
-                <YAxis hide />
-                <Tooltip content={<CustomTooltip unit="KM" />} cursor={{ fill: 'rgba(26, 35, 126, 0.02)' }} />
+                <YAxis 
+                  yAxisId="left"
+                  orientation="left"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#1A237E' }}
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#4CAF50' }}
+                />
+                <Tooltip content={<CustomTooltip unit="KM/L" />} cursor={{ fill: 'rgba(26, 35, 126, 0.02)' }} />
                 <Bar 
+                  yAxisId="left"
                   dataKey="value" 
                   name="Distancia"
                   fill="#1A237E" 
-                  radius={[16, 16, 0, 0]} 
-                  barSize={40}
+                  radius={[8, 8, 0, 0]} 
+                  barSize={32}
                   animationDuration={1500}
                 />
-                <Bar 
+                <Area 
+                  yAxisId="right"
+                  type="monotone"
                   dataKey="liters" 
                   name="Combustible"
-                  fill="#94f990" 
-                  radius={[16, 16, 0, 0]} 
-                  barSize={16}
+                  stroke="#4CAF50"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorLiters)"
                   animationDuration={2000}
                 />
-              </BarChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
