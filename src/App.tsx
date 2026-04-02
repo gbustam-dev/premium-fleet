@@ -47,14 +47,14 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  LineChart, 
-  Line, 
   AreaChart, 
   Area, 
   CartesianGrid,
   ScatterChart,
   Scatter,
-  ZAxis
+  ZAxis,
+  ReferenceLine,
+  ReferenceArea
 } from 'recharts';
 
 import { 
@@ -2598,7 +2598,13 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           
           <div className="h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <LineChart data={stats.priceVariation}>
+              <AreaChart data={stats.priceVariation}>
+                <defs>
+                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1A237E" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#1A237E" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="label" 
@@ -2612,19 +2618,22 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
                   dx={-10}
+                  domain={['dataMin - 10', 'dataMax + 10']}
                 />
                 <Tooltip content={<CustomTooltip unit="$" />} />
-                <Line 
-                  type="stepAfter" 
+                <Area 
+                  type="monotone" 
                   dataKey="price" 
                   name="Precio"
                   stroke="#1A237E" 
-                  strokeWidth={4} 
+                  strokeWidth={5} 
+                  fillOpacity={1}
+                  fill="url(#colorPrice)"
                   dot={false}
                   activeDot={{ r: 8, strokeWidth: 0, fill: '#1A237E' }}
                   animationDuration={1500}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -2647,6 +2656,12 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <defs>
+                  <linearGradient id="dotGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#1A237E" />
+                    <stop offset="100%" stopColor="#3F51B5" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="5 5" stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   type="number" 
@@ -2669,13 +2684,18 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 />
                 <ZAxis type="number" dataKey="liters" range={[100, 1000]} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip unit="Score/KM/L" />} />
+                
+                {/* Optimal zone highlight */}
+                <ReferenceArea x1={80} x2={100} y1={stats.averageEfficiency} y2={stats.averageEfficiency + 10} fill="#94f990" fillOpacity={0.05} />
+                <ReferenceLine y={stats.averageEfficiency} stroke="#94f990" strokeDasharray="3 3" label={{ value: 'Promedio', position: 'right', fill: '#4CAF50', fontSize: 10, fontWeight: 900 }} />
+                <ReferenceLine x={80} stroke="#1A237E" strokeDasharray="3 3" opacity={0.2} label={{ value: 'Zona Opt.', position: 'top', fill: '#1A237E', fontSize: 10, fontWeight: 900 }} />
+
                 <Scatter 
                   name="Cargas" 
                   data={stats.conductionScoreHistory} 
-                  fill="#1A237E" 
-                  fillOpacity={0.6}
+                  fill="url(#dotGradient)"
                   stroke="#1A237E"
-                  strokeWidth={2}
+                  strokeWidth={1}
                   animationDuration={2000}
                 />
               </ScatterChart>
