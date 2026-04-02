@@ -2333,7 +2333,7 @@ const CustomTooltip = ({ active, payload, label, unit }: any) => {
   return null;
 };
 
-const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void }) => {
+const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyncTime }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void, lastSyncTime: Date }) => {
   const stats = useMemo(() => {
     if (fuelLogs.length === 0) return {
       totalRefuels: 0,
@@ -2345,15 +2345,21 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       odometerHistory: [],
       distanceHistory: [],
       conductionScoreHistory: [],
-      averageEfficiency: 0
+      averageEfficiency: 0,
+      totalInvestment: 0,
+      avgCostPerKm: 0
     };
 
     const sortedLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const totalRefuels = fuelLogs.length;
+    const totalInvestment = fuelLogs.reduce((acc, log) => acc + log.totalCost, 0);
+    
     const minOdo = Math.min(...fuelLogs.map(l => l.mileage));
     const maxOdo = Math.max(...fuelLogs.map(l => l.mileage));
     const totalKilometers = maxOdo - minOdo;
-    const estimatedSavings = Math.round(fuelLogs.reduce((acc, log) => acc + log.totalCost, 0) * 0.1);
+    const avgCostPerKm = totalKilometers > 0 ? totalInvestment / totalKilometers : 0;
+    
+    const estimatedSavings = Math.round(totalInvestment * 0.1);
 
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
     const targetEff = vehicle?.targetEfficiency || 15;
@@ -2403,7 +2409,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       if (!isFinite(efficiency) || efficiency <= 0) return null;
       
       const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
-      const score = Math.round(normalizedEff * 75 + 15 + (Math.random() * 10));
+      // Use a deterministic "pseudo-random" based on data to keep it stable but dynamic-looking
+      const dataHash = (dist + log.liters + log.totalCost) % 10;
+      const score = Math.round(normalizedEff * 80 + 10 + dataHash);
       
       return { 
         score,
@@ -2438,7 +2446,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       efficiencyHistory,
       conductionScoreHistory,
       distanceHistory,
-      averageEfficiency: isFinite(averageEfficiency) ? parseFloat(averageEfficiency.toFixed(1)) : 0
+      averageEfficiency: isFinite(averageEfficiency) ? parseFloat(averageEfficiency.toFixed(1)) : 0,
+      totalInvestment,
+      avgCostPerKm
     };
   }, [fuelLogs, vehicles, selectedVehicleId]);
 
@@ -2451,9 +2461,17 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     >
       <section className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary ring-4 ring-primary/10"></span>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Advanced Analytics</span>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Advanced Analytics • LIVE</span>
+            {lastSyncTime && (
+              <span className="text-[9px] font-bold text-outline uppercase ml-2 px-2 py-0.5 bg-outline/5 rounded-full">
+                Sincronizado {new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(lastSyncTime)}
+              </span>
+            )}
           </div>
           <h2 className="text-4xl md:text-6xl font-black font-headline tracking-tighter text-primary">Estadísticas</h2>
         </div>
@@ -2473,51 +2491,74 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
         {/* Main Stats Summary Cards */}
-        <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-primary-container text-white flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
+        <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between group hover:bg-primary-container transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-primary-container text-white flex items-center justify-center mb-6 shadow-lg shadow-primary/20 group-hover:bg-white group-hover:text-primary transition-colors">
               <HistoryIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Cargas</p>
-              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter">{stats.totalRefuels}</h4>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-white/70 transition-colors">Cargas</p>
+              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">{stats.totalRefuels}</h4>
             </div>
           </div>
 
-          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-tertiary-fixed text-on-tertiary-fixed-variant flex items-center justify-center mb-6 shadow-lg shadow-tertiary-fixed/20">
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between group hover:bg-tertiary-fixed transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-tertiary-fixed text-on-tertiary-fixed-variant flex items-center justify-center mb-6 shadow-lg shadow-tertiary-fixed/20 group-hover:bg-white transition-colors">
               <Gauge className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Kilómetros</p>
-              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter">{formatKm(stats.totalKilometers)}</h4>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-on-tertiary-fixed-variant/70 transition-colors">Kilómetros</p>
+              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-on-tertiary-fixed-variant transition-colors">{formatKm(stats.totalKilometers)}</h4>
             </div>
           </div>
 
-          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-[#f5f5f7] text-primary flex items-center justify-center mb-6 border border-primary/5">
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between group hover:bg-secondary-container transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-[#f5f5f7] text-primary flex items-center justify-center mb-6 border border-primary/5 group-hover:bg-white transition-colors">
+              <HistoryIcon className="w-5 h-5 rotate-180" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-primary transition-colors">Inv. Total</p>
+              <h4 className="text-2xl font-black font-headline text-primary tracking-tighter group-hover:text-primary transition-colors">${formatMoney(stats.totalInvestment)}</h4>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between group hover:bg-primary transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-[#f5f5f7] text-primary flex items-center justify-center mb-6 border border-primary/5 group-hover:bg-white transition-colors">
               <Fuel className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">PROM. $/L</p>
-              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-white/70 transition-colors">PROM. $/L</p>
+              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">
                 ${stats.priceVariation.length > 0 ? formatMoney(stats.priceVariation.reduce((a, b) => a + b.price, 0) / stats.priceVariation.length) : '0'}
               </h4>
             </div>
           </div>
 
-          <div className="bg-primary text-white p-6 rounded-[2rem] shadow-2xl premium-shadow relative overflow-hidden group">
+          <div className="bg-surface-container-low p-6 rounded-[2rem] border border-primary/5 flex flex-col justify-between group hover:bg-success transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-[#f5f5f7] text-success flex items-center justify-center mb-6 border border-primary/5 group-hover:bg-white transition-colors">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-white/70 transition-colors">Costo / KM</p>
+              <div className="flex items-baseline gap-0.5">
+                <h4 className="text-2xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">${formatMoney(stats.avgCostPerKm)}</h4>
+                <span className="text-[10px] font-bold text-outline group-hover:text-white/50 transition-colors">/KM</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-primary text-white p-6 rounded-[2rem] shadow-2xl premium-shadow relative overflow-hidden group hover:scale-[1.05] transition-all duration-500">
             <div className="z-10 relative">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Eficiencia Media</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Eficiencia</p>
               <div className="flex items-baseline gap-1">
-                <h4 className="text-4xl font-black font-headline tracking-tighter group-hover:scale-110 transition-transform origin-left duration-500">
+                <h4 className="text-3xl font-black font-headline tracking-tighter">
                   {formatEfficiency(stats.averageEfficiency)}
                 </h4>
                 <span className="text-[10px] font-bold opacity-60">KM/L</span>
               </div>
             </div>
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-all"></div>
-            <Leaf className="absolute top-4 right-4 w-4 h-4 text-tertiary-fixed opacity-40" />
+            <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-all"></div>
+            <Leaf className="absolute top-4 right-4 w-4 h-4 text-tertiary-fixed opacity-40 animate-pulse" />
           </div>
         </div>
 
@@ -3716,6 +3757,7 @@ export default function App() {
   const [editingLog, setEditingLog] = useState<FuelLog | null>(null);
   const [viewingLog, setViewingLog] = useState<FuelLog | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
   useEffect(() => {
     const testConnection = async () => {
@@ -3754,6 +3796,7 @@ export default function App() {
           const unsubLogs = onSnapshot(logsQuery, (snapshot) => {
             const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FuelLog));
             setFuelLogs(logs);
+            setLastSyncTime(new Date());
           }, (error) => {
             handleFirestoreError(error, OperationType.LIST, `users/${fUser.uid}/fuelLogs`);
           });
@@ -3960,6 +4003,7 @@ export default function App() {
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
+            lastSyncTime={lastSyncTime}
           />
         );
       case 'profile':
