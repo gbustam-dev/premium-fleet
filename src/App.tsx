@@ -2864,7 +2864,6 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
   const [apiModels, setApiModels] = useState<{idModelo: number, nombre: string}[]>([]);
   const [apiPropulsions, setApiPropulsions] = useState<{idEtiqueta: string, nombre: string}[]>([]);
   const [loadingApi, setLoadingApi] = useState(false);
-  const [loadingEff] = useState(false);
   // @ts-ignore
   const [loadingEff, setLoadingEff] = useState(false);
 
