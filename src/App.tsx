@@ -2668,7 +2668,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   tickLine={false}
                   label={{ value: "Eficiencia (KM/L)", angle: -90, position: "left", fill: "#888", fontSize: 10, fontWeight: 700 }}
                 />
-                <ZAxis type="number" dataKey="liters" range={[200, 800]} />
+                <ZAxis type="number" dataKey="liters" range={[50, 250]} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip unit="Score/KM/L" />} />
                 
                 {/* Optimal zone highlight */}
