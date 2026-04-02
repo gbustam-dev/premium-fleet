@@ -2356,8 +2356,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
     
     const minOdo = Math.min(...fuelLogs.map(l => l.mileage));
     const maxOdo = Math.max(...fuelLogs.map(l => l.mileage));
-    const totalKilometers = maxOdo - minOdo;
-    const avgCostPerKm = totalKilometers > 0 ? totalInvestment / totalKilometers : 0;
+    const totalDistance = maxOdo - minOdo;
+    const totalKilometers = maxOdo; // Current odometer
+    const avgCostPerKm = totalDistance > 0 ? totalInvestment / totalDistance : 0;
     
     const estimatedSavings = Math.round(totalInvestment * 0.1);
 
@@ -2507,7 +2508,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
               <Gauge className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-on-tertiary-fixed-variant/70 transition-colors">Kilómetros</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-on-tertiary-fixed-variant/70 transition-colors">Odómetro Total</p>
               <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-on-tertiary-fixed-variant transition-colors">{formatKm(stats.totalKilometers)}</h4>
             </div>
           </div>
