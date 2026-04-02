@@ -2620,7 +2620,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   name="Precio"
                   stroke="#1A237E" 
                   strokeWidth={4} 
-                  dot={{ r: 5, fill: '#fff', strokeWidth: 3, stroke: '#1A237E' }}
+                  dot={false}
                   activeDot={{ r: 8, strokeWidth: 0, fill: '#1A237E' }}
                   animationDuration={1500}
                 />
