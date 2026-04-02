@@ -2403,9 +2403,16 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       
       const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
       const score = Math.round(normalizedEff * 75 + 15 + (Math.random() * 10));
+      
+      // Jitter to avoid perfect overlap
+      const displayScore = score + (Math.random() * 2 - 1);
+      const displayEfficiency = efficiency + (Math.random() * 0.4 - 0.2);
+
       return { 
-        score, 
-        efficiency: parseFloat(efficiency.toFixed(2)), 
+        score,
+        efficiency: parseFloat(efficiency.toFixed(2)),
+        displayScore,
+        displayEfficiency,
         liters: log.liters, 
         z: log.liters,
         label: `Carga #${i + 2}`,
@@ -2645,7 +2652,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 <CartesianGrid strokeDasharray="5 5" stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   type="number" 
-                  dataKey="score" 
+                  dataKey="displayScore" 
                   name="Puntaje" 
                   unit="" 
                   domain={[0, 100]} 
@@ -2655,7 +2662,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 />
                 <YAxis 
                   type="number" 
-                  dataKey="efficiency" 
+                  dataKey="displayEfficiency" 
                   name="Eficiencia" 
                   unit=" KM/L" 
                   axisLine={false} 
