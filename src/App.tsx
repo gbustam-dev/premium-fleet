@@ -2354,70 +2354,39 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
     const targetEff = vehicle?.targetEfficiency || 15;
 
-    // Group by month
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const monthlyData = sortedLogs.reduce((acc: any, log) => {
-      const date = new Date(log.date);
-      const month = months[date.getMonth()];
-      const year = date.getFullYear();
-      const key = `${month} ${year}`;
-      
-      if (!acc[key]) acc[key] = { liters: 0, count: 0, odo: log.mileage, minOdo: log.mileage, month, year };
-      acc[key].liters += log.liters;
-      acc[key].count += 1;
-      acc[key].odo = Math.max(acc[key].odo, log.mileage);
-      acc[key].minOdo = Math.min(acc[key].minOdo, log.mileage);
-      return acc;
-    }, {});
-
-    const sortedMonthKeys = Object.keys(monthlyData).sort((a, b) => {
-      const [mA, yA] = a.split(' ');
-      const [mB, yB] = b.split(' ');
-      return (parseInt(yA) - parseInt(yB)) || (months.indexOf(mA) - months.indexOf(mB));
-    });
-
-    const monthlyConsumption = sortedMonthKeys.map(key => ({
-      month: key,
-      liters: monthlyData[key].liters,
-      isCurrent: monthlyData[key].month === months[new Date().getMonth()] && monthlyData[key].year === new Date().getFullYear()
-    }));
-
-    const distanceHistory = sortedMonthKeys.map((key, i) => {
-      let distance = 0;
-      if (i === 0) {
-        distance = monthlyData[key].odo - monthlyData[key].minOdo;
-      } else {
-        const prevKey = sortedMonthKeys[i - 1];
-        distance = monthlyData[key].odo - monthlyData[prevKey].odo;
-      }
-      return {
-        month: key,
-        value: Math.max(0, distance)
-      };
-    });
-
-    const priceVariation = sortedLogs.map((log) => ({
-      label: formatMonthYear(new Date(log.date)),
+    const priceVariation = sortedLogs.map((log, index) => ({
+      label: `Carga #${index + 1}`,
+      fullDate: log.date,
       price: log.pricePerLiter,
       dateOriginal: log.date
     }));
 
-    const efficiencyHistory = sortedMonthKeys.map(key => {
-      const logsInMonth = sortedLogs.filter(l => {
-        const d = new Date(l.date);
-        return months[d.getMonth()] === monthlyData[key].month && d.getFullYear() === monthlyData[key].year;
-      });
-      if (logsInMonth.length < 2) return { month: key, value: 0 };
-      
-      const sortedInMonth = [...logsInMonth].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const dist = sortedInMonth[sortedInMonth.length - 1].mileage - sortedInMonth[0].mileage;
-      const lits = sortedInMonth.slice(1).reduce((acc, l) => acc + l.liters, 0);
-      
+    const efficiencyHistory = sortedLogs.slice(1).map((log, i) => {
+      const prev = sortedLogs[i];
+      const dist = log.mileage - prev.mileage;
+      const eff = dist / log.liters;
       return {
-        month: key,
-        value: (dist > 0 && lits > 0) ? parseFloat((dist / lits).toFixed(2)) : 0
+        label: `Carga #${i + 2}`,
+        fullDate: log.date,
+        value: isFinite(eff) && eff > 0 ? parseFloat(eff.toFixed(2)) : 0
       };
     }).filter(h => h.value > 0);
+
+    const distanceHistory = sortedLogs.slice(1).map((log, i) => {
+      const prev = sortedLogs[i];
+      return {
+        label: `Carga #${i + 2}`,
+        fullDate: log.date,
+        value: Math.max(0, log.mileage - prev.mileage),
+        liters: log.liters
+      };
+    });
+
+    const eventConsumption = sortedLogs.map((log, i) => ({
+      label: `Carga #${i + 1}`,
+      fullDate: log.date,
+      liters: log.liters
+    }));
 
     const conductionScoreHistory = sortedLogs.slice(1).map((log, i) => {
       const prev = sortedLogs[i];
@@ -2426,13 +2395,13 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       if (!isFinite(efficiency) || efficiency <= 0) return null;
       
       const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
-      // Generate a synthetic score centered around efficiency performance with some behavioral noise
       const score = Math.round(normalizedEff * 75 + 15 + (Math.random() * 10));
       return { 
         score, 
         efficiency: parseFloat(efficiency.toFixed(2)), 
         liters: log.liters, 
-        z: log.liters // used for dot size
+        z: log.liters,
+        label: `Carga #${i + 2}`
       };
     }).filter((d): d is any => d !== null);
 
@@ -2449,7 +2418,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       totalRefuels,
       totalKilometers,
       estimatedSavings,
-      monthlyConsumption,
+      monthlyConsumption: eventConsumption,
       priceVariation,
       efficiencyHistory,
       conductionScoreHistory,
@@ -2541,7 +2510,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
         <div className="md:col-span-12 bg-surface-container-low p-10 rounded-[3rem] border border-primary/5 relative overflow-hidden chart-container-bg">
           <div className="mb-12 relative z-10">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Evolución de Rendimiento</p>
-            <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Consumo Real (KM/L)</h3>
+            <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Rendimiento por Carga (KM/L)</h3>
           </div>
           
           <div className="h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
@@ -2555,7 +2524,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 </defs>
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="label" 
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
@@ -2686,6 +2655,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip unit="Score/KM/L" />} />
                 
                 {/* Optimal zone highlight */}
+                {/* @ts-ignore */}
                 <ReferenceArea x1={80} x2={100} y1={stats.averageEfficiency} y2={stats.averageEfficiency + 10} fill="#94f990" fillOpacity={0.05} />
                 <ReferenceLine y={stats.averageEfficiency} stroke="#94f990" strokeDasharray="3 3" label={{ value: 'Promedio', position: 'right', fill: '#4CAF50', fontSize: 10, fontWeight: 900 }} />
                 <ReferenceLine x={80} stroke="#1A237E" strokeDasharray="3 3" opacity={0.2} label={{ value: 'Zona Opt.', position: 'top', fill: '#1A237E', fontSize: 10, fontWeight: 900 }} />
@@ -2713,7 +2683,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Actividad de Flota</p>
-              <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Consumo y Distancia Mensual</h3>
+              <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Consumo y Distancia por Carga</h3>
             </div>
             <div className="flex gap-4 p-2 bg-white/50 backdrop-blur-sm rounded-2xl border border-primary/5">
               <div className="flex items-center gap-2 px-5 py-2">
@@ -2735,7 +2705,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
               }))}>
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="label" 
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
