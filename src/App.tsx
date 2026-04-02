@@ -81,18 +81,33 @@ const formatKm = (val: number) => new Intl.NumberFormat('es-CL', { minimumFracti
 const formatMoney = (val: number) => new Intl.NumberFormat('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
 const formatEfficiency = (val: number) => new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
 
+// Cache sorted logs per vehicle to avoid O(N^2 log N) performance bottleneck
+const sortedLogsCache = new WeakMap<FuelLog[], Record<string, FuelLog[]>>();
+
+const getSortedVehicleLogs = (allLogs: FuelLog[], vehicleId: string) => {
+  let cache = sortedLogsCache.get(allLogs);
+  if (!cache) {
+    cache = {};
+    sortedLogsCache.set(allLogs, cache);
+  }
+  if (!cache[vehicleId]) {
+    cache[vehicleId] = allLogs
+      .filter(log => log.vehicleId === vehicleId)
+      .sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
+        const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+  }
+  return cache[vehicleId];
+};
+
 const calculateLogStats = (currentLog: { mileage: number, liters: number, totalCost: number, date: string, time?: string, vehicleId: string, id?: string }, allLogs: FuelLog[]) => {
   if (!currentLog.mileage || !currentLog.liters || !currentLog.totalCost) return null;
 
   const currentDateTime = new Date(`${currentLog.date}T${currentLog.time || '00:00'}`);
   
-  const vehicleLogs = allLogs
-    .filter(log => log.vehicleId === currentLog.vehicleId)
-    .sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-      const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-      return dateA.getTime() - dateB.getTime();
-    });
+  const vehicleLogs = getSortedVehicleLogs(allLogs, currentLog.vehicleId);
 
   // Find the log immediately before the current entry
   // If we are editing an existing log, we need to find the one before it in the sorted list
@@ -2850,6 +2865,8 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
   const [apiPropulsions, setApiPropulsions] = useState<{idEtiqueta: string, nombre: string}[]>([]);
   const [loadingApi, setLoadingApi] = useState(false);
   const [loadingEff] = useState(false);
+  // @ts-ignore
+  const [loadingEff, setLoadingEff] = useState(false);
 
   // Fetch Marcas on mount
   useEffect(() => {
