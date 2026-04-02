@@ -2357,8 +2357,9 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
     const targetEff = vehicle?.targetEfficiency || 15;
 
-    const priceVariation = sortedLogs.map((log) => ({
-      label: formatMonthYear(new Date(log.date)),
+    const priceVariation = sortedLogs.map((log, i) => ({
+      label: `Carga #${i + 1}`,
+      displayLabel: formatMonthYear(new Date(log.date)),
       fullDate: log.date,
       price: log.pricePerLiter,
       dateOriginal: log.date
@@ -2369,7 +2370,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       const dist = log.mileage - prev.mileage;
       const eff = dist / log.liters;
       return {
-        label: formatMonthYear(new Date(log.date)),
+        label: `Carga #${i + 2}`,
+        displayLabel: formatMonthYear(new Date(log.date)),
         fullDate: log.date,
         value: isFinite(eff) && eff > 0 ? parseFloat(eff.toFixed(2)) : 0
       };
@@ -2378,15 +2380,17 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     const distanceHistory = sortedLogs.slice(1).map((log, i) => {
       const prev = sortedLogs[i];
       return {
-        label: formatMonthYear(new Date(log.date)),
+        label: `Carga #${i + 2}`,
+        displayLabel: formatMonthYear(new Date(log.date)),
         fullDate: log.date,
         value: Math.max(0, log.mileage - prev.mileage),
         liters: log.liters
       };
     });
 
-    const eventConsumption = sortedLogs.map((log) => ({
-      label: formatMonthYear(new Date(log.date)),
+    const eventConsumption = sortedLogs.map((log, i) => ({
+      label: `Carga #${i + 1}`,
+      displayLabel: formatMonthYear(new Date(log.date)),
       fullDate: log.date,
       liters: log.liters
     }));
@@ -2404,7 +2408,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
         efficiency: parseFloat(efficiency.toFixed(2)), 
         liters: log.liters, 
         z: log.liters,
-        label: formatMonthYear(new Date(log.date)),
+        label: `Carga #${i + 2}`,
+        displayLabel: formatMonthYear(new Date(log.date)),
         fullDate: log.date
       };
     }).filter((d): d is any => d !== null);
@@ -2529,6 +2534,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="label" 
+                  tickFormatter={(val) => stats.efficiencyHistory.find(d => d.label === val)?.displayLabel || val}
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
@@ -2581,6 +2587,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="label" 
+                  tickFormatter={(val) => stats.priceVariation.find(d => d.label === val)?.displayLabel || val}
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
@@ -2703,13 +2710,11 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
           
           <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
-              <BarChart data={stats.distanceHistory.map((d, i) => ({
-                ...d,
-                liters: stats.monthlyConsumption[i]?.liters || 0
-              }))}>
+              <BarChart data={stats.distanceHistory}>
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="label" 
+                  tickFormatter={(val) => stats.distanceHistory.find(d => d.label === val)?.displayLabel || val}
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
