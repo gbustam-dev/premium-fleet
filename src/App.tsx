@@ -2662,12 +2662,12 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   tickLine={false}
                   label={{ value: "Eficiencia (KM/L)", angle: -90, position: "left", fill: "#888", fontSize: 10, fontWeight: 700 }}
                 />
-                <ZAxis type="number" dataKey="liters" range={[100, 1000]} />
+                <ZAxis type="number" dataKey="liters" range={[200, 800]} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip unit="Score/KM/L" />} />
                 
                 {/* Optimal zone highlight */}
                 {/* @ts-ignore */}
-                <ReferenceArea x1={80} x2={100} y1={stats.averageEfficiency} y2={stats.averageEfficiency + 10} fill="#94f990" fillOpacity={0.05} />
+                <ReferenceArea x1={80} x2={100} y1={stats.averageEfficiency} y2={stats.averageEfficiency + 10} fill="#4CAF50" fillOpacity={0.1} stroke="#4CAF50" strokeOpacity={0.2} />
                 <ReferenceLine y={stats.averageEfficiency} stroke="#94f990" strokeDasharray="3 3" label={{ value: 'Promedio', position: 'right', fill: '#4CAF50', fontSize: 10, fontWeight: 900 }} />
                 <ReferenceLine x={80} stroke="#1A237E" strokeDasharray="3 3" opacity={0.2} label={{ value: 'Zona Opt.', position: 'top', fill: '#1A237E', fontSize: 10, fontWeight: 900 }} />
 
@@ -2676,7 +2676,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
                   data={stats.conductionScoreHistory} 
                   fill="url(#dotGradient)"
                   stroke="#1A237E"
-                  strokeWidth={1}
+                  strokeWidth={2}
+                  fillOpacity={0.7}
                   animationDuration={2000}
                 />
               </ScatterChart>
