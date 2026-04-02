@@ -2357,8 +2357,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
     const targetEff = vehicle?.targetEfficiency || 15;
 
-    const priceVariation = sortedLogs.map((log, index) => ({
-      label: `Carga #${index + 1}`,
+    const priceVariation = sortedLogs.map((log) => ({
+      label: formatMonthYear(new Date(log.date)),
       fullDate: log.date,
       price: log.pricePerLiter,
       dateOriginal: log.date
@@ -2369,7 +2369,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
       const dist = log.mileage - prev.mileage;
       const eff = dist / log.liters;
       return {
-        label: `Carga #${i + 2}`,
+        label: formatMonthYear(new Date(log.date)),
         fullDate: log.date,
         value: isFinite(eff) && eff > 0 ? parseFloat(eff.toFixed(2)) : 0
       };
@@ -2378,15 +2378,15 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
     const distanceHistory = sortedLogs.slice(1).map((log, i) => {
       const prev = sortedLogs[i];
       return {
-        label: `Carga #${i + 2}`,
+        label: formatMonthYear(new Date(log.date)),
         fullDate: log.date,
         value: Math.max(0, log.mileage - prev.mileage),
         liters: log.liters
       };
     });
 
-    const eventConsumption = sortedLogs.map((log, i) => ({
-      label: `Carga #${i + 1}`,
+    const eventConsumption = sortedLogs.map((log) => ({
+      label: formatMonthYear(new Date(log.date)),
       fullDate: log.date,
       liters: log.liters
     }));
@@ -2404,7 +2404,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
         efficiency: parseFloat(efficiency.toFixed(2)), 
         liters: log.liters, 
         z: log.liters,
-        label: `Carga #${i + 2}`,
+        label: formatMonthYear(new Date(log.date)),
         fullDate: log.date
       };
     }).filter((d): d is any => d !== null);
