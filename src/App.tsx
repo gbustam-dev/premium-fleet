@@ -2287,7 +2287,8 @@ const CustomTooltip = ({ active, payload, label, unit }: any) => {
       const { score, efficiency, liters } = payload[0].payload;
       return (
         <div className="bg-white/95 backdrop-blur-xl p-5 rounded-[2rem] shadow-2xl border border-primary/5 min-w-[200px] premium-shadow-deep scale-up-tooltip">
-          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] border-b border-primary/5 pb-3 mb-4">Métrica de Viaje</p>
+          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] border-b border-primary/5 pb-3 mb-1">Métrica de Viaje</p>
+          {payload[0].payload.fullDate && <p className="text-[10px] font-bold text-primary opacity-60 mb-4">{payload[0].payload.fullDate}</p>}
           <div className="space-y-3">
              <div className="flex justify-between items-center bg-primary-container p-2.5 rounded-2xl text-white">
                <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Puntaje</span>
@@ -2306,9 +2307,11 @@ const CustomTooltip = ({ active, payload, label, unit }: any) => {
       );
     }
 
+    const itemData = payload[0].payload;
     return (
       <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-primary/5 flex flex-col gap-1 min-w-[140px] premium-shadow">
         {label && <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.1em] border-b border-primary/5 pb-2 mb-2">{label}</p>}
+        {itemData.fullDate && <p className="text-[10px] font-black text-primary/60 mb-2">{itemData.fullDate}</p>}
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-bold text-primary">{payload[0].name || unit}</p>
           <div className="flex items-baseline gap-0.5">
@@ -2401,7 +2404,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fue
         efficiency: parseFloat(efficiency.toFixed(2)), 
         liters: log.liters, 
         z: log.liters,
-        label: `Carga #${i + 2}`
+        label: `Carga #${i + 2}`,
+        fullDate: log.date
       };
     }).filter((d): d is any => d !== null);
 
