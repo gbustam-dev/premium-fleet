@@ -1370,6 +1370,16 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
 };
 
 const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdit, onDelete, onView }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void, onEdit: (log: FuelLog) => void, onDelete: (id: string) => void, onView: (log: FuelLog) => void }) => {
+  // Memoize the calculation of current month liters to prevent unnecessary re-calculations
+  // and object instantiations on every render
+  const currentMonthLiters = useMemo(() => {
+    return fuelLogs.filter(log => {
+      const d = new Date(log.date);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).reduce((acc, log) => acc + log.liters, 0);
+  }, [fuelLogs]);
+
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
@@ -1383,11 +1393,7 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
           <h1 className="text-4xl font-extrabold font-headline text-primary tracking-tight mb-4">Historial de Cargas</h1>
           <div className="flex items-end gap-2">
             <span className="text-5xl font-extrabold font-headline text-primary tracking-tighter">
-              {formatLiters(fuelLogs.filter(log => {
-                const d = new Date(log.date);
-                const now = new Date();
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-              }).reduce((acc, log) => acc + log.liters, 0))}
+              {formatLiters(currentMonthLiters)}
             </span>
             <span className="text-sm font-bold uppercase tracking-wider text-outline mb-2">Litros Totales / Mes</span>
           </div>
@@ -3938,11 +3944,13 @@ export default function App() {
     return <Login />;
   }
 
-  const renderScreen = () => {
-    const filteredLogs = selectedVehicleId 
+  const filteredLogs = useMemo(() => {
+    return selectedVehicleId
       ? fuelLogs.filter(log => log.vehicleId === selectedVehicleId)
       : fuelLogs;
+  }, [fuelLogs, selectedVehicleId]);
 
+  const renderScreen = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
