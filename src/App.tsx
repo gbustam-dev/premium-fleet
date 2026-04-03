@@ -710,24 +710,26 @@ const VehicleSelector = ({ vehicles, selectedVehicleId, onSelect, className = ""
   
   return (
     <div className={`relative group ${className}`}>
-      <button className="flex items-center gap-3 bg-surface-container-low px-4 py-2 rounded-xl border border-surface-variant hover:bg-surface-variant transition-all">
+      <button aria-haspopup="listbox" className="flex items-center gap-3 bg-surface-container-low px-4 py-2 rounded-xl border border-surface-variant hover:bg-surface-variant transition-all focus-visible:ring-2 focus-visible:ring-primary outline-none">
         <Car className="w-5 h-5 text-primary" />
         <div className="text-left">
           <p className="text-xs font-bold uppercase tracking-widest text-secondary leading-none mb-1">Vehículo</p>
           <p className="text-sm font-bold text-primary leading-none">{selectedVehicle?.name || 'Seleccionar'}</p>
         </div>
-        <ChevronDown className="w-4 h-4 text-outline ml-2 group-hover:rotate-180 transition-transform" />
+        <ChevronDown className="w-4 h-4 text-outline ml-2 group-hover:rotate-180 group-focus-within:rotate-180 transition-transform" />
       </button>
       
-      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-surface-variant opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+      <div role="listbox" className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-surface-variant opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 overflow-hidden">
         {vehicles.length === 0 ? (
           <div className="px-6 py-4 text-sm text-secondary italic">No hay vehículos registrados</div>
         ) : (
           vehicles.map(v => (
             <button 
+              role="option"
+              aria-selected={selectedVehicleId === v.id}
               key={v.id}
               onClick={() => onSelect(v.id)}
-              className={`w-full px-6 py-4 text-left hover:bg-surface-variant transition-colors flex items-center justify-between ${selectedVehicleId === v.id ? 'bg-primary/5' : ''}`}
+              className={`w-full px-6 py-4 text-left hover:bg-surface-variant transition-colors flex items-center justify-between focus-visible:bg-surface-variant focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset outline-none ${selectedVehicleId === v.id ? 'bg-primary/5' : ''}`}
             >
               <div>
                 <p className="font-bold text-primary">{v.name}</p>
