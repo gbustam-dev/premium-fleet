@@ -293,22 +293,27 @@ const EfficiencySummary = ({ stats, compact = false }: { stats: any, compact?: b
   );
 };
 
+const stationLogoCache = new Map<string, string>();
+
 const getStationLogo = (name: string) => {
   if (!name) return 'https://ui-avatars.com/api/?name=Gas+Station&background=random&color=fff&size=128&bold=true&format=svg';
   
+  if (stationLogoCache.has(name)) {
+    return stationLogoCache.get(name)!;
+  }
+
+  const result = computeStationLogo(name);
+  stationLogoCache.set(name, result);
+  return result;
+};
+
+const computeStationLogo = (name: string): string => {
   const lowerName = name.toLowerCase();
   const getFavicon = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
   
-  // South America / Chile
-  if (lowerName.includes('copec') || lowerName.includes('pronto') || lowerName.includes('punto') || lowerName.includes('gasolinera central')) {
-    return 'https://upload.wikimedia.org/wikipedia/commons/9/92/Copec_Logo_2023.svg';
-  }
-  if (lowerName.includes('aramco')) {
-    return 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Saudi_aramco_logo.svg';
-  }
-  if (lowerName.includes('shell') || lowerName.includes('enex') || lowerName.includes('upa')) {
-    return getFavicon('shell.com');
-  }
+  if (lowerName.includes('copec') || lowerName.includes('pronto') || lowerName.includes('punto') || lowerName.includes('gasolinera central')) return 'https://upload.wikimedia.org/wikipedia/commons/9/92/Copec_Logo_2023.svg';
+  if (lowerName.includes('aramco')) return 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Saudi_aramco_logo.svg';
+  if (lowerName.includes('shell') || lowerName.includes('enex') || lowerName.includes('upa')) return getFavicon('shell.com');
   if (lowerName.includes('petrobras')) return getFavicon('petrobras.com.br');
   if (lowerName.includes('terpel')) return getFavicon('terpel.com');
   if (lowerName.includes('lipigas')) return getFavicon('lipigas.cl');
@@ -320,8 +325,6 @@ const getStationLogo = (name: string) => {
   if (lowerName.includes('primax')) return getFavicon('primax.com.pe');
   if (lowerName.includes('pemex')) return getFavicon('pemex.com');
   if (lowerName.includes('oxxo')) return getFavicon('oxxo.com');
-
-  // Global / North America / Europe
   if (lowerName.includes('bp') || lowerName.includes('british petroleum')) return getFavicon('bp.com');
   if (lowerName.includes('chevron')) return getFavicon('chevron.com');
   if (lowerName.includes('exxon')) return getFavicon('exxon.com');
@@ -367,7 +370,6 @@ const getStationLogo = (name: string) => {
   if (lowerName.includes('loves') || lowerName.includes('love\'s')) return getFavicon('loves.com');
   if (lowerName.includes('ta') || lowerName.includes('travelcenters')) return getFavicon('ta-petro.com');
 
-  // Fallback mechanism: generate an avatar based on the station name
   const fallbackName = encodeURIComponent(name.trim() || 'Gas Station');
   return `https://ui-avatars.com/api/?name=${fallbackName}&background=random&color=fff&size=128&bold=true&format=svg`;
 };
@@ -1375,10 +1377,13 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
   // Memoize the calculation of current month liters to prevent unnecessary re-calculations
   // and object instantiations on every render
   const currentMonthLiters = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
     return fuelLogs.filter(log => {
       const d = new Date(log.date);
-      const now = new Date();
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     }).reduce((acc, log) => acc + log.liters, 0);
   }, [fuelLogs]);
 
