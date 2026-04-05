@@ -576,8 +576,9 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">Gemini API Key</label>
+            <label htmlFor="gemini-api-key" className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">Gemini API Key</label>
             <input 
+              id="gemini-api-key"
               type="text" 
               value={apiKey} 
               onChange={e => setApiKey(e.target.value)} 
@@ -1961,10 +1962,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Fecha del Registro</label>
+            <label htmlFor="log-date" className="block text-sm font-semibold text-primary ml-1">Fecha del Registro</label>
             <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.date ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
               <Calendar className={`${errors.date ? 'text-error' : 'text-outline'} w-5 h-5`} />
               <input 
+                id="log-date"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
                 type="date" 
                 value={date}
@@ -1977,10 +1979,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {errors.date && <p className="text-xs font-bold text-error ml-1 uppercase tracking-tight">{errors.date}</p>}
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Hora</label>
+            <label htmlFor="log-time" className="block text-sm font-semibold text-primary ml-1">Hora</label>
             <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.time ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
               <Clock className={`${errors.time ? 'text-error' : 'text-outline'} w-5 h-5`} />
               <input 
+                id="log-time"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
                 type="time" 
                 value={time}
@@ -1996,7 +1999,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Estación de Gasolina</label>
+            <label htmlFor="log-station" className="block text-sm font-semibold text-primary ml-1">Estación de Gasolina</label>
             <div className="bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow relative">
               {getStationLogo(stationName) ? (
                 <img 
@@ -2012,6 +2015,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                 <MapPin className="text-outline w-5 h-5" />
               )}
               <input 
+                id="log-station"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
                 type="text" 
                 placeholder="Nombre de la estación"
@@ -2043,8 +2047,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             </div>
             <div className="bg-surface-container-low rounded-lg p-4 flex flex-col gap-1 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow mt-2">
               <div className="flex items-center gap-3">
+                <label htmlFor="log-address" className="sr-only">Dirección</label>
                 <MapPin className="text-outline w-4 h-4" />
                 <input 
+                  id="log-address"
                   className="bg-transparent border-none w-full focus:ring-0 text-secondary text-xs font-medium italic placeholder:not-italic" 
                   type="text" 
                   placeholder="Dirección (se agrega automáticamente)"
