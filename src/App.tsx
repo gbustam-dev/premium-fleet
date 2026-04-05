@@ -150,21 +150,22 @@ const calculateLogStats = (currentLog: { mileage: number, liters: number, totalC
     }
   }
 
-  // Calculate history of efficiency for the last 10 logs
-  const history = vehicleLogs
-    .slice(0, currentIndex === -1 ? vehicleLogs.length : currentIndex + 1)
-    .map((log, i, arr) => {
-      if (i === 0) return null;
-      const prev = arr[i - 1];
-      const dist = log.mileage - prev.mileage;
-      if (dist <= 0) return null;
-      return {
+  // Calculate history of efficiency for the last 10 logs using O(1) backward scan
+  const history: { date: string, efficiency: number }[] = [];
+  const startIdx = currentIndex === -1 ? vehicleLogs.length - 1 : currentIndex;
+
+  for (let i = startIdx; i > 0 && history.length < 10; i--) {
+    const log = vehicleLogs[i];
+    const prev = vehicleLogs[i - 1];
+    const dist = log.mileage - prev.mileage;
+
+    if (dist > 0) {
+      history.unshift({
         date: log.date,
         efficiency: dist / log.liters
-      };
-    })
-    .filter((h): h is { date: string, efficiency: number } => h !== null)
-    .slice(-10);
+      });
+    }
+  }
 
   return {
     distance,

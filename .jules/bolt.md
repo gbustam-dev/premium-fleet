@@ -8,3 +8,7 @@
 ## 2024-04-04 - React Render Blocking string evaluation
 **Learning:** Found an O(N) evaluation inside render loops using 50+ sequential string `.includes()` checks to resolve static assets (logos) causing synchronous main thread blocking. Also found `new Date()` being instantiated inside `Array.prototype.filter` callbacks causing high GC pressure.
 **Action:** Use `Map` caching for resolving static strings. Hoist loop-invariant object instantiations like `new Date()` outside of high-frequency loops and filters.
+
+## 2024-05-19 - Optimizing map/filter/slice on large arrays in utility functions
+**Learning:** Chaining array methods like `slice(0, index).map(...).filter(...).slice(-10)` inside a frequently called render loop function (`calculateLogStats`) creates intermediate arrays and causes an O(N) iteration overhead for each element.
+**Action:** Replace the functional array chain with an early-exit backward `for` loop. This avoids creating intermediate objects and limits the operations to O(1) by stopping exactly when the required 10 elements are gathered, reducing overall computational complexity from O(N^2) to O(N) during the `map` phase over all logs.
