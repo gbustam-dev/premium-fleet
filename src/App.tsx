@@ -3836,14 +3836,25 @@ export default function App() {
   const handleSaveVehicle = async (vehicle: Vehicle) => {
     if (!firebaseUser) return;
     const { id, ...vehicleData } = vehicle;
+
+    const cleanData: any = {
+      name: vehicleData.name,
+      make: vehicleData.make,
+      model: vehicleData.model,
+      year: vehicleData.year,
+    };
+    if (vehicleData.plate) cleanData.plate = vehicleData.plate;
+    if (vehicleData.targetEfficiency) cleanData.targetEfficiency = vehicleData.targetEfficiency;
+    if (vehicleData.propulsion) cleanData.propulsion = vehicleData.propulsion;
+
     const vehiclesRef = collection(db, 'users', firebaseUser.uid, 'vehicles');
     const path = id ? `users/${firebaseUser.uid}/vehicles/${id}` : `users/${firebaseUser.uid}/vehicles`;
 
     try {
       if (id) {
-        await updateDoc(doc(vehiclesRef, id), vehicleData as any);
+        await updateDoc(doc(vehiclesRef, id), cleanData);
       } else {
-        const docRef = await addDoc(vehiclesRef, vehicleData);
+        const docRef = await addDoc(vehiclesRef, cleanData);
         if (!selectedVehicleId) setSelectedVehicleId(docRef.id);
       }
     } catch (error) {
@@ -3866,14 +3877,32 @@ export default function App() {
     if (!firebaseUser) return;
     
     const { id, ...logData } = log;
+
+    // Ensure no undefined values are sent to Firestore, and all required rules are met
+    const cleanData: any = {
+      vehicleId: logData.vehicleId,
+      date: logData.date,
+      time: logData.time || '12:00', // Time is required by Firestore rules
+      mileage: logData.mileage || 0,
+      liters: logData.liters || 1,
+      pricePerLiter: logData.pricePerLiter || 1,
+      totalCost: logData.totalCost || 0,
+    };
+
+    if (logData.stationName) cleanData.stationName = logData.stationName;
+    if (logData.address) cleanData.address = logData.address;
+    if (logData.fuelType) cleanData.fuelType = logData.fuelType;
+    if (logData.isHighEfficiency !== undefined) cleanData.isHighEfficiency = logData.isHighEfficiency;
+    if (logData.location) cleanData.location = logData.location;
+
     const logsRef = collection(db, 'users', firebaseUser.uid, 'fuelLogs');
     const path = editingLog ? `users/${firebaseUser.uid}/fuelLogs/${id}` : `users/${firebaseUser.uid}/fuelLogs`;
 
     try {
       if (editingLog) {
-        await updateDoc(doc(logsRef, id), logData as any);
+        await updateDoc(doc(logsRef, id), cleanData);
       } else {
-        await addDoc(logsRef, logData);
+        await addDoc(logsRef, cleanData);
       }
     } catch (error) {
       handleFirestoreError(error, editingLog ? OperationType.UPDATE : OperationType.CREATE, path);
