@@ -3878,22 +3878,34 @@ export default function App() {
     
     const { id, ...logData } = log;
 
+    // Fix time format to strictly match ^\d{1,2}:\d{2}$
+    let safeTime = logData.time || '12:00';
+    safeTime = safeTime.replace(/[^0-9:]/g, ''); // Remove AM/PM or spaces
+    const tParts = safeTime.split(':');
+    if (tParts.length === 2) {
+      safeTime = `${tParts[0].slice(0,2)}:${tParts[1].slice(0,2)}`;
+    } else {
+      safeTime = '12:00';
+    }
+
     // Ensure no undefined values are sent to Firestore, and all required rules are met
     const cleanData: any = {
       vehicleId: logData.vehicleId,
       date: logData.date,
-      time: logData.time || '12:00', // Time is required by Firestore rules
-      mileage: logData.mileage || 0,
-      liters: logData.liters || 1,
-      pricePerLiter: logData.pricePerLiter || 1,
-      totalCost: logData.totalCost || 0,
+      time: safeTime,
+      mileage: isNaN(logData.mileage) || logData.mileage < 0 ? 0 : logData.mileage,
+      liters: isNaN(logData.liters) || logData.liters <= 0 ? 1 : logData.liters,
+      pricePerLiter: isNaN(logData.pricePerLiter) || logData.pricePerLiter <= 0 ? 1 : logData.pricePerLiter,
+      totalCost: isNaN(logData.totalCost) || logData.totalCost < 0 ? 0 : logData.totalCost,
     };
 
-    if (logData.stationName) cleanData.stationName = logData.stationName;
-    if (logData.address) cleanData.address = logData.address;
-    if (logData.fuelType) cleanData.fuelType = logData.fuelType;
-    if (logData.isHighEfficiency !== undefined) cleanData.isHighEfficiency = logData.isHighEfficiency;
-    if (logData.location) cleanData.location = logData.location;
+    if (logData.stationName) cleanData.stationName = String(logData.stationName).substring(0, 100);
+    if (logData.address) cleanData.address = String(logData.address).substring(0, 200);
+    if (logData.fuelType) cleanData.fuelType = String(logData.fuelType).substring(0, 50);
+    if (logData.isHighEfficiency !== undefined) cleanData.isHighEfficiency = Boolean(logData.isHighEfficiency);
+    if (logData.location && typeof logData.location.latitude === 'number' && typeof logData.location.longitude === 'number') {
+      cleanData.location = { latitude: logData.location.latitude, longitude: logData.location.longitude };
+    }
 
     const logsRef = collection(db, 'users', firebaseUser.uid, 'fuelLogs');
     const path = editingLog ? `users/${firebaseUser.uid}/fuelLogs/${id}` : `users/${firebaseUser.uid}/fuelLogs`;
