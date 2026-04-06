@@ -1932,10 +1932,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         onSave(log);
       }}>
         <div className="space-y-2">
-          <label className="block text-sm font-semibold text-primary ml-1">Seleccionar Vehículo</label>
+          <label htmlFor="vehicleId" className="block text-sm font-semibold text-primary ml-1">Seleccionar Vehículo</label>
           <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.vehicleId ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
             <Car className={`${errors.vehicleId ? 'text-error' : 'text-outline'} w-5 h-5`} />
             <select 
+              id="vehicleId"
               className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none" 
               value={vehicleId}
               onChange={(e) => {
@@ -2150,10 +2151,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             )}
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Tipo de Combustible</label>
+            <label htmlFor="fuelType" className="block text-sm font-semibold text-primary ml-1">Tipo de Combustible</label>
             <div className="bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow">
               <Fuel className="text-outline w-5 h-5" />
               <select 
+                id="fuelType"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none" 
                 value={fuelType}
                 onChange={(e) => setFuelType(e.target.value as any)}
@@ -2192,9 +2194,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-bold text-primary uppercase tracking-widest">Litros</label>
+            <label htmlFor="liters" className="block text-sm font-bold text-primary uppercase tracking-widest">Litros</label>
             <div className="relative">
               <input 
+                id="liters"
                 className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.liters ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
                 inputMode="decimal" 
                 placeholder="0.00" 
@@ -2207,9 +2210,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {errors.liters && <p className="text-xs font-bold text-error ml-1 uppercase tracking-tight">{errors.liters}</p>}
           </div>
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-bold text-primary uppercase tracking-widest">Precio/L</label>
+            <label htmlFor="pricePerLiter" className="block text-sm font-bold text-primary uppercase tracking-widest">Precio/L</label>
             <div className="relative">
               <input 
+                id="pricePerLiter"
                 className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.pricePerLiter ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
                 inputMode="decimal" 
                 placeholder="0.00" 
@@ -2222,9 +2226,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {errors.pricePerLiter && <p className="text-xs font-bold text-error ml-1 uppercase tracking-tight">{errors.pricePerLiter}</p>}
           </div>
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-bold text-primary uppercase tracking-widest">Total</label>
+            <label htmlFor="totalCost" className="block text-sm font-bold text-primary uppercase tracking-widest">Total</label>
             <div className="relative">
               <input 
+                id="totalCost"
                 className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.totalCost ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
                 inputMode="decimal" 
                 placeholder="0.00" 
@@ -3310,9 +3315,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-secondary">Nombre Completo</label>
+              <label htmlFor="user-name" className="text-xs font-bold uppercase tracking-widest text-secondary">Nombre Completo</label>
               {isEditing ? (
                 <input 
+                  id="user-name"
                   className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -3329,9 +3335,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-secondary">Unidades</label>
+                <label htmlFor="user-units" className="text-xs font-bold uppercase tracking-widest text-secondary">Unidades</label>
                 {isEditing ? (
                   <select 
+                    id="user-units"
                     className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                     value={formData.preferredUnits}
                     onChange={(e) => setFormData({ ...formData, preferredUnits: e.target.value as any })}
@@ -3346,9 +3353,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-secondary">Moneda</label>
+                <label htmlFor="user-currency" className="text-xs font-bold uppercase tracking-widest text-secondary">Moneda</label>
                 {isEditing ? (
                   <input 
+                    id="user-currency"
                     className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -3382,8 +3390,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <h3 className="font-bold text-primary">{editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Nombre (Alias)</label>
+                  <label htmlFor="vehicle-name" className="text-xs font-bold uppercase tracking-widest text-outline">Nombre (Alias)</label>
                   <input 
+                    id="vehicle-name"
                     type="text" 
                     value={vehicleFormData.name}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, name: e.target.value })}
@@ -3392,8 +3401,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Marca</label>
+                  <label htmlFor="vehicle-make" className="text-xs font-bold uppercase tracking-widest text-outline">Marca</label>
                     <select 
+                      id="vehicle-make"
                       value={vehicleFormData.make}
                       onChange={(e) => setVehicleFormData({ ...vehicleFormData, make: e.target.value, model: '', propulsion: '' })}
                       className="w-full bg-surface-container-low p-3 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
@@ -3414,9 +3424,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                     </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Modelo</label>
+                  <label htmlFor="vehicle-model" className="text-xs font-bold uppercase tracking-widest text-outline">Modelo</label>
                   <div className="relative">
                     <select 
+                      id="vehicle-model"
                       value={vehicleFormData.model}
                       onChange={(e) => setVehicleFormData({ ...vehicleFormData, model: e.target.value, propulsion: '' })}
                       disabled={!vehicleFormData.make || loadingApi}
@@ -3434,8 +3445,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Propulsión</label>
+                  <label htmlFor="vehicle-propulsion" className="text-xs font-bold uppercase tracking-widest text-outline">Propulsión</label>
                   <select 
+                    id="vehicle-propulsion"
                     value={vehicleFormData.propulsion}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, propulsion: e.target.value })}
                     disabled={!vehicleFormData.model}
@@ -3452,8 +3464,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Año</label>
+                  <label htmlFor="vehicle-year" className="text-xs font-bold uppercase tracking-widest text-outline">Año</label>
                   <input 
+                    id="vehicle-year"
                     type="number" 
                     value={vehicleFormData.year}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, year: parseInt(e.target.value) })}
@@ -3461,8 +3474,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Placa</label>
+                  <label htmlFor="vehicle-plate" className="text-xs font-bold uppercase tracking-widest text-outline">Placa</label>
                   <input 
+                    id="vehicle-plate"
                     type="text" 
                     value={vehicleFormData.plate}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, plate: e.target.value })}
@@ -3471,10 +3485,11 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">
+                  <label htmlFor="vehicle-efficiency" className="text-xs font-bold uppercase tracking-widest text-outline">
                     {loadingEff ? 'Consultando rendimiento mixto...' : 'Rendimiento (KM/L)'}
                   </label>
                   <input 
+                    id="vehicle-efficiency"
                     type="number" 
                     step="0.1"
                     value={vehicleFormData.targetEfficiency}
