@@ -215,7 +215,7 @@ const EfficiencySummary = ({ stats, compact = false }: { stats: any, compact?: b
           </div>
         </div>
         {stats.history && stats.history.length > 1 && (
-          <div className="h-[40px] w-24 hidden sm:block">
+          <div className="h-[40px] w-24">
             <ResponsiveContainer width="99%" height="100%" debounce={50}>
               <AreaChart data={stats.history}>
                 <Area 
@@ -1214,7 +1214,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
         </div>
 
         {/* Small Stats Grid */}
-        <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="md:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-surface-container-low p-6 rounded-2xl border border-secondary/5 flex items-center gap-4">
             <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center">
               <Gauge className="w-6 h-6 text-primary" />
@@ -1267,7 +1267,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
               <div className="bg-primary/10 px-4 py-2 rounded-lg text-primary text-[10px] font-bold uppercase tracking-widest">Vista Histórica</div>
             </div>
           </div>
-          <div className="relative w-full h-[350px]">
+          <div className="relative w-full h-[250px] md:h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.consumptionHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -1281,8 +1281,8 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }} 
-                  minTickGap={30}
+                  tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }} 
+                  minTickGap={20}
                 />
                 <YAxis hide domain={['auto', 'auto']} />
                 <Tooltip 
@@ -2499,7 +2499,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-white/70 transition-colors">Cargas</p>
-              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">{stats.totalRefuels}</h4>
+              <h4 className="text-2xl md:text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">{stats.totalRefuels}</h4>
             </div>
           </div>
 
@@ -2509,7 +2509,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-on-tertiary-fixed-variant/70 transition-colors">Odómetro Total</p>
-              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-on-tertiary-fixed-variant transition-colors">{formatKm(stats.totalKilometers)}</h4>
+              <h4 className="text-2xl md:text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-on-tertiary-fixed-variant transition-colors">{formatKm(stats.totalKilometers)}</h4>
             </div>
           </div>
 
@@ -2519,7 +2519,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-primary transition-colors">Inv. Total</p>
-              <h4 className="text-2xl font-black font-headline text-primary tracking-tighter group-hover:text-primary transition-colors">${formatMoney(stats.totalInvestment)}</h4>
+              <h4 className="text-xl md:text-2xl font-black font-headline text-primary tracking-tighter group-hover:text-primary transition-colors">${formatMoney(stats.totalInvestment)}</h4>
             </div>
           </div>
 
@@ -2529,7 +2529,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-white/70 transition-colors">PROM. $/L</p>
-              <h4 className="text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">
+              <h4 className="text-2xl md:text-3xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">
                 ${stats.priceVariation.length > 0 ? formatMoney(stats.priceVariation.reduce((a, b) => a + b.price, 0) / stats.priceVariation.length) : '0'}
               </h4>
             </div>
@@ -2542,7 +2542,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1 group-hover:text-white/70 transition-colors">Costo / KM</p>
               <div className="flex items-baseline gap-0.5">
-                <h4 className="text-2xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">${formatMoney(stats.avgCostPerKm)}</h4>
+                <h4 className="text-xl md:text-2xl font-black font-headline text-primary tracking-tighter group-hover:text-white transition-colors">${formatMoney(stats.avgCostPerKm)}</h4>
                 <span className="text-[10px] font-bold text-outline group-hover:text-white/50 transition-colors">/KM</span>
               </div>
             </div>
@@ -2552,7 +2552,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             <div className="z-10 relative">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Eficiencia</p>
               <div className="flex items-baseline gap-1">
-                <h4 className="text-3xl font-black font-headline tracking-tighter">
+                  <h4 className="text-2xl md:text-3xl font-black font-headline tracking-tighter">
                   {formatEfficiency(stats.averageEfficiency)}
                 </h4>
                 <span className="text-[10px] font-bold opacity-60">KM/L</span>
@@ -2570,7 +2570,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Rendimiento por Carga (KM/L)</h3>
           </div>
           
-          <div className="h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
+          <div className="h-64 md:h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <AreaChart data={stats.efficiencyHistory}>
                 <defs>
@@ -2585,7 +2585,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   tickFormatter={(val) => stats.efficiencyHistory.find(d => d.label === val)?.displayLabel || val}
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
+                  minTickGap={25}
                   dy={10}
                 />
                 <YAxis 
@@ -2623,7 +2624,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
           </div>
           
-          <div className="h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border border-white/50 shadow-inner">
+          <div className="h-64 md:h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <AreaChart data={stats.priceVariation}>
                 <defs>
@@ -2638,7 +2639,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   tickFormatter={(val) => stats.priceVariation.find(d => d.label === val)?.displayLabel || val}
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
+                  minTickGap={25}
                   dy={10}
                 />
                 <YAxis 
@@ -2681,7 +2683,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
           </div>
           
-          <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
+          <div className="h-80 md:h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <defs>
@@ -2759,7 +2761,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             </div>
           </div>
           
-          <div className="h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-inner">
+          <div className="h-80 md:h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <ComposedChart data={stats.distanceHistory}>
                 <defs>
@@ -2774,7 +2776,8 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   tickFormatter={(val) => stats.distanceHistory.find(d => d.label === val)?.displayLabel || val}
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
+                  tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
+                  minTickGap={20}
                   dy={10}
                 />
                 <YAxis 
