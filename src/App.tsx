@@ -573,7 +573,7 @@ const ConfirmModal = () => {
   );
 };
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState;
   public props: ErrorBoundaryProps;
   
@@ -595,12 +595,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.state.hasError) {
       let errorMessage = "Algo salió mal.";
       try {
-        const parsedError = JSON.parse(this.state.error.message);
-        if (parsedError.error) {
-          errorMessage = `Error de base de datos: ${parsedError.error}`;
+        if (this.state.error && this.state.error.message) {
+           const parsedError = JSON.parse(this.state.error.message);
+           if (parsedError.error) {
+             errorMessage = `Error de base de datos: ${parsedError.error}`;
+           }
         }
       } catch (e) {
-        errorMessage = this.state.error.message || errorMessage;
+        errorMessage = this.state.error?.message || errorMessage;
       }
 
       return (
@@ -4065,46 +4067,44 @@ export default function App() {
   };
 
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-surface font-sans selection:bg-primary/10">
-        <TopAppBar onSettingsClick={() => setShowSettings(true)} />
-        <main className="relative">
-          <AnimatePresence mode="wait">
-            {renderScreen()}
-          </AnimatePresence>
-          <Toast />
-          <ConfirmModal />
-          <AnimatePresence>
-            {showSettings && (
-              <SettingsModal 
-                user={user} 
-                onMigrateLogs={handleMigrateLogs}
-                onUpdateUser={handleUpdateUser} 
-                onClose={() => setShowSettings(false)} 
-              />
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {viewingLog && (
-              <LogDetails 
-                log={viewingLog} 
-                vehicle={vehicles.find(v => v.id === viewingLog.vehicleId)}
-                fuelLogs={fuelLogs}
-                onClose={() => setViewingLog(null)}
-                onEdit={handleEditLog}
-                onDelete={handleDeleteLog}
-              />
-            )}
-          </AnimatePresence>
-        </main>
-        <BottomNavBar 
-          activeTab={activeTab} 
-          onTabChange={(tab) => {
-            if (tab === 'new') setEditingLog(null);
-            setActiveTab(tab);
-          }} 
-        />
-      </div>
-    </ErrorBoundary>
+    <div className="min-h-screen bg-surface font-sans selection:bg-primary/10">
+      <TopAppBar onSettingsClick={() => setShowSettings(true)} />
+      <main className="relative">
+        <AnimatePresence mode="wait">
+          {renderScreen()}
+        </AnimatePresence>
+        <Toast />
+        <ConfirmModal />
+        <AnimatePresence>
+          {showSettings && (
+            <SettingsModal
+              user={user}
+              onMigrateLogs={handleMigrateLogs}
+              onUpdateUser={handleUpdateUser}
+              onClose={() => setShowSettings(false)}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {viewingLog && (
+            <LogDetails
+              log={viewingLog}
+              vehicle={vehicles.find(v => v.id === viewingLog.vehicleId)}
+              fuelLogs={fuelLogs}
+              onClose={() => setViewingLog(null)}
+              onEdit={handleEditLog}
+              onDelete={handleDeleteLog}
+            />
+          )}
+        </AnimatePresence>
+      </main>
+      <BottomNavBar
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          if (tab === 'new') setEditingLog(null);
+          setActiveTab(tab);
+        }}
+      />
+    </div>
   );
 }
