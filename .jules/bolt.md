@@ -12,3 +12,7 @@
 ## 2024-05-19 - Optimizing map/filter/slice on large arrays in utility functions
 **Learning:** Chaining array methods like `slice(0, index).map(...).filter(...).slice(-10)` inside a frequently called render loop function (`calculateLogStats`) creates intermediate arrays and causes an O(N) iteration overhead for each element.
 **Action:** Replace the functional array chain with an early-exit backward `for` loop. This avoids creating intermediate objects and limits the operations to O(1) by stopping exactly when the required 10 elements are gathered, reducing overall computational complexity from O(N^2) to O(N) during the `map` phase over all logs.
+
+## 2024-05-20 - Optimizing Date Sorting and Filtering using String Comparisons
+**Learning:** Instantiating `new Date()` objects within `.sort()` or `.filter()` loops creates significant performance overhead and GC pressure. For ISO-formatted date strings (e.g., YYYY-MM-DD), the standard alphabetical string comparison gives identical sorting logic but avoids object creation entirely.
+**Action:** Replaced `new Date(a.date).getTime() - new Date(b.date).getTime()` with `a.date < b.date ? -1 : a.date > b.date ? 1 : 0` and replaced `.getMonth() === currentMonth` checks with string `startsWith()` operations. Always favor string comparisons over Date instantiations within high-frequency loops when the dates are formatted appropriately.

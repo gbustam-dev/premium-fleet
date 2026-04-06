@@ -95,9 +95,9 @@ const getSortedVehicleLogs = (allLogs: FuelLog[], vehicleId: string) => {
     cache[vehicleId] = allLogs
       .filter(log => log.vehicleId === vehicleId)
       .sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-        const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-        return dateA.getTime() - dateB.getTime();
+        const strA = `${a.date}T${a.time || '00:00'}`;
+        const strB = `${b.date}T${b.time || '00:00'}`;
+        return strA < strB ? -1 : strA > strB ? 1 : 0;
       });
   }
   return cache[vehicleId];
@@ -736,16 +736,14 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
     };
 
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+    const currentYearStr = String(now.getFullYear());
+    const targetMonthPrefix = `${currentYearStr}-${currentMonthStr}`;
     
-    const monthlyLogs = fuelLogs.filter(log => {
-      const d = new Date(log.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
+    const monthlyLogs = fuelLogs.filter(log => log.date.startsWith(targetMonthPrefix));
     
     const monthlyTotalCost = monthlyLogs.reduce((acc, log) => acc + log.totalCost, 0);
-    const sortedLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedLogs = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
@@ -992,13 +990,13 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       consumptionHistory: []
     };
 
-    const targetMonth = viewDate.getMonth();
-    const targetYear = viewDate.getFullYear();
+    const targetMonthStr = String(viewDate.getMonth() + 1).padStart(2, '0');
+    const targetYearStr = String(viewDate.getFullYear());
+    const targetMonthPrefix = `${targetYearStr}-${targetMonthStr}`;
     
     // Monthly filtering
     const monthlyLogs = fuelLogs.filter(log => {
-      const d = new Date(log.date);
-      return d.getMonth() === targetMonth && d.getFullYear() === targetYear && (!selectedVehicleId || log.vehicleId === selectedVehicleId);
+      return log.date.startsWith(targetMonthPrefix) && (!selectedVehicleId || log.vehicleId === selectedVehicleId);
     });
 
     const monthlyTotalCost = monthlyLogs.reduce((acc, log) => acc + log.totalCost, 0);
@@ -1008,7 +1006,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     // Efficiency logic
     const sortedLogs = [...fuelLogs]
       .filter(l => !selectedVehicleId || l.vehicleId === selectedVehicleId)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
@@ -1025,7 +1023,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     let savedLiters = 0;
     
     if (monthlyLogs.length >= 2) {
-      const sortedMonthly = [...monthlyLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const sortedMonthly = [...monthlyLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
       const mDistance = sortedMonthly[sortedMonthly.length - 1].mileage - sortedMonthly[0].mileage;
       const mLiters = sortedMonthly.slice(1).reduce((acc, log) => acc + log.liters, 0);
       if (mDistance > 0 && mLiters > 0) {
@@ -1048,7 +1046,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       totalLiters,
       count,
       consumptionHistory: (() => {
-        const sorted = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const sorted = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
         if (sorted.length === 0) return [];
         const firstLogDate = new Date(sorted[0].date);
         const months = [];
@@ -1348,13 +1346,11 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
   // and object instantiations on every render
   const currentMonthLiters = useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+    const currentYearStr = String(now.getFullYear());
+    const targetMonthPrefix = `${currentYearStr}-${currentMonthStr}`;
 
-    return fuelLogs.filter(log => {
-      const d = new Date(log.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    }).reduce((acc, log) => acc + log.liters, 0);
+    return fuelLogs.filter(log => log.date.startsWith(targetMonthPrefix)).reduce((acc, log) => acc + log.liters, 0);
   }, [fuelLogs]);
 
   return (
@@ -1622,9 +1618,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           const vehicleLogs = fuelLogs
             .filter(log => log.vehicleId === vehicleId && (!editingLog || log.id !== editingLog.id))
             .sort((a, b) => {
-              const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-              const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-              return dateA.getTime() - dateB.getTime();
+              const strA = `${a.date}T${a.time || '00:00'}`;
+              const strB = `${b.date}T${b.time || '00:00'}`;
+              return strA < strB ? -1 : strA > strB ? 1 : 0;
             });
 
           const currentLogDate = new Date(`${date}T${time || '00:00'}`);
@@ -2343,7 +2339,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
       avgCostPerKm: 0
     };
 
-    const sortedLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedLogs = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     const totalRefuels = fuelLogs.length;
     const totalInvestment = fuelLogs.reduce((acc, log) => acc + log.totalCost, 0);
     
