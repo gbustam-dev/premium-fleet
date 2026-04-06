@@ -1,9 +1,4 @@
-## 2026-04-03 - Exposing Sensitive Data in Logs
-**Vulnerability:** The `handleFirestoreError` function in `src/App.tsx` stringified the entire Firebase user object (including `email`, `displayName`, `providerData`, etc.) into `console.error` logs.
-**Learning:** Even internal error logs sent to `console.error` can be captured by error monitoring systems (e.g., Sentry, LogRocket, Datadog) or browser extensions. PII should never be serialized in a blanket manner.
-**Prevention:** Only log necessary diagnostic context (e.g. `userId`, `operationType`, `path`). Omit PII fields or scrub objects explicitly before serialization in `JSON.stringify`.
-
-## 2024-11-23 - Missing Update Valdiations in Firestore Rules
-**Vulnerability:** Update operations in `firestore.rules` were verifying ownership but missing full validation of updated fields (e.g., `isValidVehicle(request.resource.data)`).
-**Learning:** Checking ownership is not enough. Updates must be validated against the same domain rules as creation to prevent injecting unvalidated or unauthorized fields.
-**Prevention:** Always append domain validators like `isValidVehicle()` or `isValidUser()` to `allow update` clauses, and ensure all properties explicitly defined in types have size/type limits (like `geminiApiKey`, `targetEfficiency`, and `propulsion`).
+## 2025-04-06 - [Error Information Leakage]
+**Vulnerability:** The application was exposing potentially sensitive system information and stack traces to end-users via `alert` dialogs (in Firebase authentication) and parsed JSON errors in the global `ErrorBoundary` (React rendering layer).
+**Learning:** Detailed error messages, while useful for debugging, should never be piped directly to the UI layer, as they can leak information about the database schema, third-party auth providers, or application state.
+**Prevention:** Implement a defense-in-depth approach to error handling where errors are caught and logged server-side (or securely to a logging service via `console.error` locally) and sanitized into generic, user-friendly messages for the UI.

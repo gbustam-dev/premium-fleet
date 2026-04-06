@@ -24,7 +24,8 @@ export const signInWithGoogle = async () => {
     return await signInWithPopup(auth, googleProvider);
   } catch (error: any) {
     console.error("Error signing in with Google:", error);
-    alert("Error de autenticación: " + error.message);
+    // SEC-FIX: Use a generic error message to avoid exposing internals
+    alert("Error de autenticación. Por favor, intenta de nuevo.");
     throw error;
   }
 };

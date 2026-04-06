@@ -489,15 +489,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   render() {
     if (this.state.hasError) {
-      let errorMessage = "Algo salió mal.";
-      try {
-        const parsedError = JSON.parse(this.state.error.message);
-        if (parsedError.error) {
-          errorMessage = `Error de base de datos: ${parsedError.error}`;
-        }
-      } catch (e) {
-        errorMessage = this.state.error.message || errorMessage;
-      }
+      // SEC-FIX: Use a generic error message to avoid exposing stack traces or internals
+      const errorMessage = "Ocurrió un error inesperado. Por favor, intenta de nuevo más tarde.";
 
       return (
         <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
