@@ -95,9 +95,9 @@ const getSortedVehicleLogs = (allLogs: FuelLog[], vehicleId: string) => {
     cache[vehicleId] = allLogs
       .filter(log => log.vehicleId === vehicleId)
       .sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-        const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-        return dateA.getTime() - dateB.getTime();
+        const strA = `${a.date}T${a.time || '00:00'}`;
+        const strB = `${b.date}T${b.time || '00:00'}`;
+        return strA < strB ? -1 : strA > strB ? 1 : 0;
       });
   }
   return cache[vehicleId];
@@ -150,21 +150,22 @@ const calculateLogStats = (currentLog: { mileage: number, liters: number, totalC
     }
   }
 
-  // Calculate history of efficiency for the last 10 logs
-  const history = vehicleLogs
-    .slice(0, currentIndex === -1 ? vehicleLogs.length : currentIndex + 1)
-    .map((log, i, arr) => {
-      if (i === 0) return null;
-      const prev = arr[i - 1];
-      const dist = log.mileage - prev.mileage;
-      if (dist <= 0) return null;
-      return {
+  // Calculate history of efficiency for the last 10 logs using O(1) backward scan
+  const history: { date: string, efficiency: number }[] = [];
+  const startIdx = currentIndex === -1 ? vehicleLogs.length - 1 : currentIndex;
+
+  for (let i = startIdx; i > 0 && history.length < 10; i--) {
+    const log = vehicleLogs[i];
+    const prev = vehicleLogs[i - 1];
+    const dist = log.mileage - prev.mileage;
+
+    if (dist > 0) {
+      history.unshift({
         date: log.date,
         efficiency: dist / log.liters
-      };
-    })
-    .filter((h): h is { date: string, efficiency: number } => h !== null)
-    .slice(-10);
+      });
+    }
+  }
 
   return {
     distance,
@@ -293,22 +294,27 @@ const EfficiencySummary = ({ stats, compact = false }: { stats: any, compact?: b
   );
 };
 
+const stationLogoCache = new Map<string, string>();
+
 const getStationLogo = (name: string) => {
   if (!name) return 'https://ui-avatars.com/api/?name=Gas+Station&background=random&color=fff&size=128&bold=true&format=svg';
   
+  if (stationLogoCache.has(name)) {
+    return stationLogoCache.get(name)!;
+  }
+
+  const result = computeStationLogo(name);
+  stationLogoCache.set(name, result);
+  return result;
+};
+
+const computeStationLogo = (name: string): string => {
   const lowerName = name.toLowerCase();
   const getFavicon = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
   
-  // South America / Chile
-  if (lowerName.includes('copec') || lowerName.includes('pronto') || lowerName.includes('punto') || lowerName.includes('gasolinera central')) {
-    return 'https://upload.wikimedia.org/wikipedia/commons/9/92/Copec_Logo_2023.svg';
-  }
-  if (lowerName.includes('aramco')) {
-    return 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Saudi_aramco_logo.svg';
-  }
-  if (lowerName.includes('shell') || lowerName.includes('enex') || lowerName.includes('upa')) {
-    return getFavicon('shell.com');
-  }
+  if (lowerName.includes('copec') || lowerName.includes('pronto') || lowerName.includes('punto') || lowerName.includes('gasolinera central')) return 'https://upload.wikimedia.org/wikipedia/commons/9/92/Copec_Logo_2023.svg';
+  if (lowerName.includes('aramco')) return 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Saudi_aramco_logo.svg';
+  if (lowerName.includes('shell') || lowerName.includes('enex') || lowerName.includes('upa')) return getFavicon('shell.com');
   if (lowerName.includes('petrobras')) return getFavicon('petrobras.com.br');
   if (lowerName.includes('terpel')) return getFavicon('terpel.com');
   if (lowerName.includes('lipigas')) return getFavicon('lipigas.cl');
@@ -320,8 +326,6 @@ const getStationLogo = (name: string) => {
   if (lowerName.includes('primax')) return getFavicon('primax.com.pe');
   if (lowerName.includes('pemex')) return getFavicon('pemex.com');
   if (lowerName.includes('oxxo')) return getFavicon('oxxo.com');
-
-  // Global / North America / Europe
   if (lowerName.includes('bp') || lowerName.includes('british petroleum')) return getFavicon('bp.com');
   if (lowerName.includes('chevron')) return getFavicon('chevron.com');
   if (lowerName.includes('exxon')) return getFavicon('exxon.com');
@@ -367,7 +371,6 @@ const getStationLogo = (name: string) => {
   if (lowerName.includes('loves') || lowerName.includes('love\'s')) return getFavicon('loves.com');
   if (lowerName.includes('ta') || lowerName.includes('travelcenters')) return getFavicon('ta-petro.com');
 
-  // Fallback mechanism: generate an avatar based on the station name
   const fallbackName = encodeURIComponent(name.trim() || 'Gas Station');
   return `https://ui-avatars.com/api/?name=${fallbackName}&background=random&color=fff&size=128&bold=true&format=svg`;
 };
@@ -407,40 +410,15 @@ interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
-  authInfo: {
-    userId: string | undefined;
-    email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
 }
 
 const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
     operationType,
     path
   };
+  // SEC-FIX: Do not log sensitive user information from auth.currentUser in the console
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   const readableMsg = error instanceof Error && error.message.includes('permission') 
     ? "Error de permisos: Asegúrate de completar todos los campos obligatorios y que los nombres no excedan los límites."
@@ -511,15 +489,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   render() {
     if (this.state.hasError) {
-      let errorMessage = "Algo salió mal.";
-      try {
-        const parsedError = JSON.parse(this.state.error.message);
-        if (parsedError.error) {
-          errorMessage = `Error de base de datos: ${parsedError.error}`;
-        }
-      } catch (e) {
-        errorMessage = this.state.error.message || errorMessage;
-      }
+      // SEC-FIX: Use a generic error message to avoid exposing stack traces or internals
+      const errorMessage = "Ocurrió un error inesperado. Por favor, intenta de nuevo más tarde.";
 
       return (
         <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
@@ -598,8 +569,9 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">Gemini API Key</label>
+            <label htmlFor="gemini-api-key" className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">Gemini API Key</label>
             <input 
+              id="gemini-api-key"
               type="text" 
               value={apiKey} 
               onChange={e => setApiKey(e.target.value)} 
@@ -710,24 +682,26 @@ const VehicleSelector = ({ vehicles, selectedVehicleId, onSelect, className = ""
   
   return (
     <div className={`relative group ${className}`}>
-      <button className="flex items-center gap-3 bg-surface-container-low px-4 py-2 rounded-xl border border-surface-variant hover:bg-surface-variant transition-all">
+      <button aria-haspopup="listbox" className="flex items-center gap-3 bg-surface-container-low px-4 py-2 rounded-xl border border-surface-variant hover:bg-surface-variant transition-all focus-visible:ring-2 focus-visible:ring-primary outline-none">
         <Car className="w-5 h-5 text-primary" />
         <div className="text-left">
           <p className="text-xs font-bold uppercase tracking-widest text-secondary leading-none mb-1">Vehículo</p>
           <p className="text-sm font-bold text-primary leading-none">{selectedVehicle?.name || 'Seleccionar'}</p>
         </div>
-        <ChevronDown className="w-4 h-4 text-outline ml-2 group-hover:rotate-180 transition-transform" />
+        <ChevronDown className="w-4 h-4 text-outline ml-2 group-hover:rotate-180 group-focus-within:rotate-180 transition-transform" />
       </button>
       
-      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-surface-variant opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+      <div role="listbox" className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-surface-variant opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 overflow-hidden">
         {vehicles.length === 0 ? (
           <div className="px-6 py-4 text-sm text-secondary italic">No hay vehículos registrados</div>
         ) : (
           vehicles.map(v => (
             <button 
+              role="option"
+              aria-selected={selectedVehicleId === v.id}
               key={v.id}
               onClick={() => onSelect(v.id)}
-              className={`w-full px-6 py-4 text-left hover:bg-surface-variant transition-colors flex items-center justify-between ${selectedVehicleId === v.id ? 'bg-primary/5' : ''}`}
+              className={`w-full px-6 py-4 text-left hover:bg-surface-variant transition-colors flex items-center justify-between focus-visible:bg-surface-variant focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset outline-none ${selectedVehicleId === v.id ? 'bg-primary/5' : ''}`}
             >
               <div>
                 <p className="font-bold text-primary">{v.name}</p>
@@ -762,16 +736,14 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
     };
 
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+    const currentYearStr = String(now.getFullYear());
+    const targetMonthPrefix = `${currentYearStr}-${currentMonthStr}`;
     
-    const monthlyLogs = fuelLogs.filter(log => {
-      const d = new Date(log.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
+    const monthlyLogs = fuelLogs.filter(log => log.date.startsWith(targetMonthPrefix));
     
     const monthlyTotalCost = monthlyLogs.reduce((acc, log) => acc + log.totalCost, 0);
-    const sortedLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedLogs = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
@@ -1018,13 +990,13 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       consumptionHistory: []
     };
 
-    const targetMonth = viewDate.getMonth();
-    const targetYear = viewDate.getFullYear();
+    const targetMonthStr = String(viewDate.getMonth() + 1).padStart(2, '0');
+    const targetYearStr = String(viewDate.getFullYear());
+    const targetMonthPrefix = `${targetYearStr}-${targetMonthStr}`;
     
     // Monthly filtering
     const monthlyLogs = fuelLogs.filter(log => {
-      const d = new Date(log.date);
-      return d.getMonth() === targetMonth && d.getFullYear() === targetYear && (!selectedVehicleId || log.vehicleId === selectedVehicleId);
+      return log.date.startsWith(targetMonthPrefix) && (!selectedVehicleId || log.vehicleId === selectedVehicleId);
     });
 
     const monthlyTotalCost = monthlyLogs.reduce((acc, log) => acc + log.totalCost, 0);
@@ -1034,7 +1006,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     // Efficiency logic
     const sortedLogs = [...fuelLogs]
       .filter(l => !selectedVehicleId || l.vehicleId === selectedVehicleId)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
@@ -1051,7 +1023,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     let savedLiters = 0;
     
     if (monthlyLogs.length >= 2) {
-      const sortedMonthly = [...monthlyLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const sortedMonthly = [...monthlyLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
       const mDistance = sortedMonthly[sortedMonthly.length - 1].mileage - sortedMonthly[0].mileage;
       const mLiters = sortedMonthly.slice(1).reduce((acc, log) => acc + log.liters, 0);
       if (mDistance > 0 && mLiters > 0) {
@@ -1074,7 +1046,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       totalLiters,
       count,
       consumptionHistory: (() => {
-        const sorted = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const sorted = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
         if (sorted.length === 0) return [];
         const firstLogDate = new Date(sorted[0].date);
         const months = [];
@@ -1370,6 +1342,17 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
 };
 
 const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdit, onDelete, onView }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void, onEdit: (log: FuelLog) => void, onDelete: (id: string) => void, onView: (log: FuelLog) => void }) => {
+  // Memoize the calculation of current month liters to prevent unnecessary re-calculations
+  // and object instantiations on every render
+  const currentMonthLiters = useMemo(() => {
+    const now = new Date();
+    const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
+    const currentYearStr = String(now.getFullYear());
+    const targetMonthPrefix = `${currentYearStr}-${currentMonthStr}`;
+
+    return fuelLogs.filter(log => log.date.startsWith(targetMonthPrefix)).reduce((acc, log) => acc + log.liters, 0);
+  }, [fuelLogs]);
+
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
@@ -1383,11 +1366,7 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
           <h1 className="text-4xl font-extrabold font-headline text-primary tracking-tight mb-4">Historial de Cargas</h1>
           <div className="flex items-end gap-2">
             <span className="text-5xl font-extrabold font-headline text-primary tracking-tighter">
-              {formatLiters(fuelLogs.filter(log => {
-                const d = new Date(log.date);
-                const now = new Date();
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-              }).reduce((acc, log) => acc + log.liters, 0))}
+              {formatLiters(currentMonthLiters)}
             </span>
             <span className="text-sm font-bold uppercase tracking-wider text-outline mb-2">Litros Totales / Mes</span>
           </div>
@@ -1639,9 +1618,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           const vehicleLogs = fuelLogs
             .filter(log => log.vehicleId === vehicleId && (!editingLog || log.id !== editingLog.id))
             .sort((a, b) => {
-              const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
-              const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
-              return dateA.getTime() - dateB.getTime();
+              const strA = `${a.date}T${a.time || '00:00'}`;
+              const strB = `${b.date}T${b.time || '00:00'}`;
+              return strA < strB ? -1 : strA > strB ? 1 : 0;
             });
 
           const currentLogDate = new Date(`${date}T${time || '00:00'}`);
@@ -1949,10 +1928,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         onSave(log);
       }}>
         <div className="space-y-2">
-          <label className="block text-sm font-semibold text-primary ml-1">Seleccionar Vehículo</label>
+          <label htmlFor="vehicleId" className="block text-sm font-semibold text-primary ml-1">Seleccionar Vehículo</label>
           <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.vehicleId ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
             <Car className={`${errors.vehicleId ? 'text-error' : 'text-outline'} w-5 h-5`} />
             <select 
+              id="vehicleId"
               className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none" 
               value={vehicleId}
               onChange={(e) => {
@@ -1972,10 +1952,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Fecha del Registro</label>
+            <label htmlFor="log-date" className="block text-sm font-semibold text-primary ml-1">Fecha del Registro</label>
             <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.date ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
               <Calendar className={`${errors.date ? 'text-error' : 'text-outline'} w-5 h-5`} />
               <input 
+                id="log-date"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
                 type="date" 
                 value={date}
@@ -1988,10 +1969,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {errors.date && <p className="text-xs font-bold text-error ml-1 uppercase tracking-tight">{errors.date}</p>}
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Hora</label>
+            <label htmlFor="log-time" className="block text-sm font-semibold text-primary ml-1">Hora</label>
             <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.time ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
               <Clock className={`${errors.time ? 'text-error' : 'text-outline'} w-5 h-5`} />
               <input 
+                id="log-time"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
                 type="time" 
                 value={time}
@@ -2007,7 +1989,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Estación de Gasolina</label>
+            <label htmlFor="log-station" className="block text-sm font-semibold text-primary ml-1">Estación de Gasolina</label>
             <div className="bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow relative">
               {getStationLogo(stationName) ? (
                 <img 
@@ -2023,6 +2005,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                 <MapPin className="text-outline w-5 h-5" />
               )}
               <input 
+                id="log-station"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
                 type="text" 
                 placeholder="Nombre de la estación"
@@ -2054,8 +2037,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             </div>
             <div className="bg-surface-container-low rounded-lg p-4 flex flex-col gap-1 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow mt-2">
               <div className="flex items-center gap-3">
+                <label htmlFor="log-address" className="sr-only">Dirección</label>
                 <MapPin className="text-outline w-4 h-4" />
                 <input 
+                  id="log-address"
                   className="bg-transparent border-none w-full focus:ring-0 text-secondary text-xs font-medium italic placeholder:not-italic" 
                   type="text" 
                   placeholder="Dirección (se agrega automáticamente)"
@@ -2162,10 +2147,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             )}
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-primary ml-1">Tipo de Combustible</label>
+            <label htmlFor="fuelType" className="block text-sm font-semibold text-primary ml-1">Tipo de Combustible</label>
             <div className="bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow">
               <Fuel className="text-outline w-5 h-5" />
               <select 
+                id="fuelType"
                 className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none" 
                 value={fuelType}
                 onChange={(e) => setFuelType(e.target.value as any)}
@@ -2204,9 +2190,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-bold text-primary uppercase tracking-widest">Litros</label>
+            <label htmlFor="liters" className="block text-sm font-bold text-primary uppercase tracking-widest">Litros</label>
             <div className="relative">
               <input 
+                id="liters"
                 className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.liters ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
                 inputMode="decimal" 
                 placeholder="0.00" 
@@ -2219,9 +2206,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {errors.liters && <p className="text-xs font-bold text-error ml-1 uppercase tracking-tight">{errors.liters}</p>}
           </div>
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-bold text-primary uppercase tracking-widest">Precio/L</label>
+            <label htmlFor="pricePerLiter" className="block text-sm font-bold text-primary uppercase tracking-widest">Precio/L</label>
             <div className="relative">
               <input 
+                id="pricePerLiter"
                 className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.pricePerLiter ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
                 inputMode="decimal" 
                 placeholder="0.00" 
@@ -2234,9 +2222,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {errors.pricePerLiter && <p className="text-xs font-bold text-error ml-1 uppercase tracking-tight">{errors.pricePerLiter}</p>}
           </div>
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-bold text-primary uppercase tracking-widest">Total</label>
+            <label htmlFor="totalCost" className="block text-sm font-bold text-primary uppercase tracking-widest">Total</label>
             <div className="relative">
               <input 
+                id="totalCost"
                 className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.totalCost ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
                 inputMode="decimal" 
                 placeholder="0.00" 
@@ -2350,7 +2339,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
       avgCostPerKm: 0
     };
 
-    const sortedLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedLogs = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     const totalRefuels = fuelLogs.length;
     const totalInvestment = fuelLogs.reduce((acc, log) => acc + log.totalCost, 0);
     
@@ -3325,9 +3314,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-secondary">Nombre Completo</label>
+              <label htmlFor="user-name" className="text-xs font-bold uppercase tracking-widest text-secondary">Nombre Completo</label>
               {isEditing ? (
                 <input 
+                  id="user-name"
                   className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -3344,9 +3334,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-secondary">Unidades</label>
+                <label htmlFor="user-units" className="text-xs font-bold uppercase tracking-widest text-secondary">Unidades</label>
                 {isEditing ? (
                   <select 
+                    id="user-units"
                     className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                     value={formData.preferredUnits}
                     onChange={(e) => setFormData({ ...formData, preferredUnits: e.target.value as any })}
@@ -3361,9 +3352,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-secondary">Moneda</label>
+                <label htmlFor="user-currency" className="text-xs font-bold uppercase tracking-widest text-secondary">Moneda</label>
                 {isEditing ? (
                   <input 
+                    id="user-currency"
                     className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -3397,8 +3389,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <h3 className="font-bold text-primary">{editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Nombre (Alias)</label>
+                  <label htmlFor="vehicle-name" className="text-xs font-bold uppercase tracking-widest text-outline">Nombre (Alias)</label>
                   <input 
+                    id="vehicle-name"
                     type="text" 
                     value={vehicleFormData.name}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, name: e.target.value })}
@@ -3407,8 +3400,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Marca</label>
+                  <label htmlFor="vehicle-make" className="text-xs font-bold uppercase tracking-widest text-outline">Marca</label>
                     <select 
+                      id="vehicle-make"
                       value={vehicleFormData.make}
                       onChange={(e) => setVehicleFormData({ ...vehicleFormData, make: e.target.value, model: '', propulsion: '' })}
                       className="w-full bg-surface-container-low p-3 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
@@ -3429,9 +3423,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                     </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Modelo</label>
+                  <label htmlFor="vehicle-model" className="text-xs font-bold uppercase tracking-widest text-outline">Modelo</label>
                   <div className="relative">
                     <select 
+                      id="vehicle-model"
                       value={vehicleFormData.model}
                       onChange={(e) => setVehicleFormData({ ...vehicleFormData, model: e.target.value, propulsion: '' })}
                       disabled={!vehicleFormData.make || loadingApi}
@@ -3449,8 +3444,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Propulsión</label>
+                  <label htmlFor="vehicle-propulsion" className="text-xs font-bold uppercase tracking-widest text-outline">Propulsión</label>
                   <select 
+                    id="vehicle-propulsion"
                     value={vehicleFormData.propulsion}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, propulsion: e.target.value })}
                     disabled={!vehicleFormData.model}
@@ -3467,8 +3463,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Año</label>
+                  <label htmlFor="vehicle-year" className="text-xs font-bold uppercase tracking-widest text-outline">Año</label>
                   <input 
+                    id="vehicle-year"
                     type="number" 
                     value={vehicleFormData.year}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, year: parseInt(e.target.value) })}
@@ -3476,8 +3473,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">Placa</label>
+                  <label htmlFor="vehicle-plate" className="text-xs font-bold uppercase tracking-widest text-outline">Placa</label>
                   <input 
+                    id="vehicle-plate"
                     type="text" 
                     value={vehicleFormData.plate}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, plate: e.target.value })}
@@ -3486,10 +3484,11 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-widest text-outline">
+                  <label htmlFor="vehicle-efficiency" className="text-xs font-bold uppercase tracking-widest text-outline">
                     {loadingEff ? 'Consultando rendimiento mixto...' : 'Rendimiento (KM/L)'}
                   </label>
                   <input 
+                    id="vehicle-efficiency"
                     type="number" 
                     step="0.1"
                     value={vehicleFormData.targetEfficiency}
@@ -3941,11 +3940,13 @@ export default function App() {
     return <Login />;
   }
 
-  const renderScreen = () => {
-    const filteredLogs = selectedVehicleId 
+  const filteredLogs = useMemo(() => {
+    return selectedVehicleId
       ? fuelLogs.filter(log => log.vehicleId === selectedVehicleId)
       : fuelLogs;
+  }, [fuelLogs, selectedVehicleId]);
 
+  const renderScreen = () => {
     switch (activeTab) {
       case 'dashboard':
         return (

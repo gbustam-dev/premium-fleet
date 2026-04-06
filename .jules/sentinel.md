@@ -1,0 +1,4 @@
+## 2025-04-06 - [Error Information Leakage]
+**Vulnerability:** The application was exposing potentially sensitive system information and stack traces to end-users via `alert` dialogs (in Firebase authentication) and parsed JSON errors in the global `ErrorBoundary` (React rendering layer).
+**Learning:** Detailed error messages, while useful for debugging, should never be piped directly to the UI layer, as they can leak information about the database schema, third-party auth providers, or application state.
+**Prevention:** Implement a defense-in-depth approach to error handling where errors are caught and logged server-side (or securely to a logging service via `console.error` locally) and sanitized into generic, user-friendly messages for the UI.

@@ -6,7 +6,10 @@ import { initializeFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK
-const app = initializeApp(firebaseConfig);
+const app = initializeApp({
+  ...firebaseConfig,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey
+});
 
 // Initialize services
 export const db = initializeFirestore(app, {
@@ -21,7 +24,8 @@ export const signInWithGoogle = async () => {
     return await signInWithPopup(auth, googleProvider);
   } catch (error: any) {
     console.error("Error signing in with Google:", error);
-    alert("Error de autenticación: " + error.message);
+    // SEC-FIX: Use a generic error message to avoid exposing internals
+    alert("Error de autenticación. Por favor, intenta de nuevo.");
     throw error;
   }
 };

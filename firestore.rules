@@ -88,7 +88,8 @@ service cloud.firestore {
              data.preferredUnits in ['KM/L', 'L/100KM', 'MPG'] &&
              data.currency is string && data.currency.size() > 0 && data.currency.size() <= 10 &&
              (!('avatarUrl' in data) || isValidUrl(data.avatarUrl)) &&
-             (!('role' in data) || data.role in ['admin', 'user']);
+             (!('role' in data) || data.role in ['admin', 'user']) &&
+             (!('geminiApiKey' in data) || (data.geminiApiKey is string && data.geminiApiKey.size() <= 200));
     }
 
     function isValidVehicle(data) {
@@ -100,7 +101,8 @@ service cloud.firestore {
              data.model is string && data.model.size() > 0 && data.model.size() <= 150 &&
              data.year is number && data.year >= 1900 && data.year <= 2100 &&
              (!('plate' in data) || (data.plate is string && data.plate.size() <= 50)) &&
-             (!('propulsion' in data) || data.propulsion is string);
+             (!('targetEfficiency' in data) || (data.targetEfficiency is number && data.targetEfficiency >= 0)) &&
+             (!('propulsion' in data) || (data.propulsion is string && data.propulsion.size() <= 50));
     }
 
     function isValidFuelLog(data) {
@@ -139,7 +141,7 @@ service cloud.firestore {
       match /vehicles/{vehicleId} {
         allow read: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) && isValidVehicle(request.resource.data);
-        allow update: if isOwner(userId);
+        allow update: if isOwner(userId) && isValidVehicle(request.resource.data);
         allow delete: if isOwner(userId) || isAdmin();
       }
 
