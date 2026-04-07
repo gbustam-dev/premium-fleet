@@ -106,7 +106,8 @@ const getSortedVehicleLogs = (allLogs: FuelLog[], vehicleId: string) => {
 const calculateLogStats = (currentLog: { mileage: number, liters: number, totalCost: number, date: string, time?: string, vehicleId: string, id?: string }, allLogs: FuelLog[]) => {
   if (!currentLog.mileage || !currentLog.liters || !currentLog.totalCost) return null;
 
-  const currentDateTime = new Date(`${currentLog.date}T${currentLog.time || '00:00'}`);
+  const currentDateTimeStr = `${currentLog.date}T${currentLog.time || '00:00'}`;
+  const currentDateTime = new Date(currentDateTimeStr);
   
   const vehicleLogs = getSortedVehicleLogs(allLogs, currentLog.vehicleId);
 
@@ -120,7 +121,7 @@ const calculateLogStats = (currentLog: { mileage: number, liters: number, totalC
     prevLog = currentIndex > 0 ? vehicleLogs[currentIndex - 1] : null;
   } else {
     // New log (not in allLogs yet)
-    const prevLogs = vehicleLogs.filter(l => new Date(`${l.date}T${l.time || '00:00'}`) <= currentDateTime);
+    const prevLogs = vehicleLogs.filter(l => `${l.date}T${l.time || '00:00'}` <= currentDateTimeStr);
     prevLog = prevLogs.length > 0 ? prevLogs[prevLogs.length - 1] : null;
   }
   
@@ -754,11 +755,13 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
 
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
-    const recentLogs = sortedLogs.filter(l => new Date(l.date) >= last30Days);
+    const last30DaysStr = `${last30Days.getFullYear()}-${String(last30Days.getMonth() + 1).padStart(2, '0')}-${String(last30Days.getDate()).padStart(2, '0')}`;
+    const recentLogs = sortedLogs.filter(l => l.date >= last30DaysStr);
 
     const last90Days = new Date();
     last90Days.setDate(last90Days.getDate() - 90);
-    const logs90Days = sortedLogs.filter(l => new Date(l.date) >= last90Days);
+    const last90DaysStr = `${last90Days.getFullYear()}-${String(last90Days.getMonth() + 1).padStart(2, '0')}-${String(last90Days.getDate()).padStart(2, '0')}`;
+    const logs90Days = sortedLogs.filter(l => l.date >= last90DaysStr);
     
     let distance90Days = 0;
     let monthsInWindow = 3;
@@ -1053,11 +1056,14 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
         let current = new Date(firstLogDate.getFullYear(), firstLogDate.getMonth(), 1);
         const end = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         while (current <= end) {
-          months.push({ month: current.getMonth(), year: current.getFullYear(), label: formatMonthYear(current), endDate: new Date(current.getFullYear(), current.getMonth() + 1, 0) });
+          const endDate = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+          // Format as YYYY-MM-DD
+          const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+          months.push({ month: current.getMonth(), year: current.getFullYear(), label: formatMonthYear(current), endDateStr });
           current.setMonth(current.getMonth() + 1);
         }
         return months.map(m => {
-          const mileageUpToMonth = fuelLogs.filter(l => new Date(l.date) <= m.endDate).reduce((max, l) => Math.max(max, l.mileage), 0);
+          const mileageUpToMonth = fuelLogs.filter(l => l.date <= m.endDateStr).reduce((max, l) => Math.max(max, l.mileage), 0);
           return { name: m.label, mileage: mileageUpToMonth };
         }).filter(m => m.mileage > 0);
       })()
@@ -1624,11 +1630,11 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
               return strA < strB ? -1 : strA > strB ? 1 : 0;
             });
 
-          const currentLogDate = new Date(`${date}T${time || '00:00'}`);
+          const currentLogDateStr = `${date}T${time || '00:00'}`;
           
           // Find the log immediately before and after the current date/time
-          const prevLog = [...vehicleLogs].reverse().find(l => new Date(`${l.date}T${l.time || '00:00'}`) <= currentLogDate);
-          const nextLog = vehicleLogs.find(l => new Date(`${l.date}T${l.time || '00:00'}`) >= currentLogDate);
+          const prevLog = [...vehicleLogs].reverse().find(l => `${l.date}T${l.time || '00:00'}` <= currentLogDateStr);
+          const nextLog = vehicleLogs.find(l => `${l.date}T${l.time || '00:00'}` >= currentLogDateStr);
 
           if (prevLog && numValue <= prevLog.mileage) {
             newErrors.mileage = `Debe ser mayor al registro anterior (${formatKm(prevLog.mileage)} km)`;

@@ -16,3 +16,7 @@
 ## 2024-05-20 - Optimizing Date Sorting and Filtering using String Comparisons
 **Learning:** Instantiating `new Date()` objects within `.sort()` or `.filter()` loops creates significant performance overhead and GC pressure. For ISO-formatted date strings (e.g., YYYY-MM-DD), the standard alphabetical string comparison gives identical sorting logic but avoids object creation entirely.
 **Action:** Replaced `new Date(a.date).getTime() - new Date(b.date).getTime()` with `a.date < b.date ? -1 : a.date > b.date ? 1 : 0` and replaced `.getMonth() === currentMonth` checks with string `startsWith()` operations. Always favor string comparisons over Date instantiations within high-frequency loops when the dates are formatted appropriately.
+
+## 2024-05-21 - UTC Timezone Shifts in Local Date String Generation
+**Learning:** When attempting to bypass `new Date()` allocations by generating ISO strings from local `Date` objects, using `last30Days.toISOString().split('T')[0]` is dangerous. Because `toISOString()` returns UTC time, it can cause the resulting date string to shift backwards or forwards by a day depending on the user's timezone offset and the time of day. This creates subtle, intermittent bugs in filtering logic.
+**Action:** Always manually assemble local date strings using `.getFullYear()`, `.getMonth() + 1`, and `.getDate()` padded with `padStart(2, '0')` when comparing against local date strings (YYYY-MM-DD), avoiding `toISOString()` entirely unless specifically working in UTC.
