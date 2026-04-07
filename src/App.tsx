@@ -1513,6 +1513,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
   const [nearbyStations, setNearbyStations] = useState<any[]>([]);
   const [searchingStations, setSearchingStations] = useState(false);
   const [noStationsFound, setNoStationsFound] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -1906,11 +1907,13 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         )}
       </AnimatePresence>
 
-      <form className="space-y-10" onSubmit={(e) => {
+      <form className="space-y-10" onSubmit={async (e) => {
         e.preventDefault();
         
         if (!validateAll()) return;
 
+        setIsSubmitting(true);
+        try {
           const log: FuelLog = {
             id: editingLog?.id || Math.random().toString(36).substr(2, 9),
             vehicleId,
@@ -1925,7 +1928,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             fuelType: fuelType,
             location: location || undefined,
           };
-        onSave(log);
+          await onSave(log);
+        } finally {
+          setIsSubmitting(false);
+        }
       }}>
         <div className="space-y-2">
           <label htmlFor="vehicleId" className="block text-sm font-semibold text-primary ml-1">Seleccionar Vehículo</label>
@@ -2169,13 +2175,14 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         <div className="bg-surface-container-low rounded-xl p-8 space-y-6">
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h2 className="text-lg font-bold font-headline text-primary">Kilometraje</h2>
+              <label htmlFor="mileage-input" className="block text-lg font-bold font-headline text-primary">Kilometraje</label>
               <p className="text-xs text-secondary uppercase tracking-tighter">Lectura actual del odómetro</p>
             </div>
             <Gauge className={`${errors.mileage ? 'text-error' : 'text-primary/40'} w-8 h-8`} />
           </div>
           <div className="relative">
             <input 
+              id="mileage-input"
               className={`w-full bg-surface-container-lowest text-3xl md:text-[2.5rem] font-bold font-headline py-6 pl-6 pr-16 rounded-xl border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.mileage ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
               inputMode="numeric" 
               placeholder="000,000" 
@@ -2251,9 +2258,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         <div className="pt-6 flex flex-col gap-4">
           <button 
             type="submit"
-            className="w-full py-5 px-8 rounded-lg bg-gradient-to-br from-primary to-primary-container text-white font-bold text-lg font-headline shadow-[0_8px_32px_rgba(26,35,126,0.15)] hover:shadow-[0_12px_48px_rgba(26,35,126,0.25)] transition-all active:scale-[0.98] flex justify-center items-center gap-3"
+            disabled={isSubmitting}
+            className={`w-full py-5 px-8 rounded-lg bg-gradient-to-br from-primary to-primary-container text-white font-bold text-lg font-headline shadow-[0_8px_32px_rgba(26,35,126,0.15)] transition-all flex justify-center items-center gap-3 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-[0_12px_48px_rgba(26,35,126,0.25)] active:scale-[0.98]'}`}
           >
-            <CheckCircle2 className="w-6 h-6" />
+            {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
             {editingLog ? 'Actualizar Registro' : 'Guardar Registro'}
           </button>
           {editingLog && (
