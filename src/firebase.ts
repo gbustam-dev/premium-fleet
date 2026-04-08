@@ -26,6 +26,7 @@ try {
     });
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
+      ignoreUndefinedProperties: true,
     }, (firebaseConfig as any).firestoreDatabaseId);
     auth = getAuth(app);
     console.log("Firebase Init: Services initialized successfully.");
