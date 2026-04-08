@@ -3762,23 +3762,41 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
+  const filteredLogs = useMemo(() => {
+    return selectedVehicleId
+      ? fuelLogs.filter(log => log.vehicleId === selectedVehicleId)
+      : fuelLogs;
+  }, [fuelLogs, selectedVehicleId]);
+
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(prev => {
+        if(prev) console.warn("Carga forzada por tiempo de espera excedido");
+        return false;
+      });
+    }, 8000);
+
     const testConnection = async () => {
       try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration. ");
+        if (db) {
+          await getDocFromServer(doc(db, 'test', 'connection'));
         }
+      } catch (error) {
+        console.warn("Initial connection test failed, usually safe to ignore if Firebase is secondary:", error);
       }
     };
     testConnection();
 
+    if (!auth || !db) {
+      console.error("Firebase auth or database is not initialized. Please configure VITE_FIREBASE_API_KEY.");
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
       setFirebaseUser(fUser);
-      if (fUser) {
-        const userDocRef = doc(db, 'users', fUser.uid);
-        try {
+      try {
+        if (fUser) {
+          const userDocRef = doc(db, 'users', fUser.uid);
           const userDoc = await getDoc(userDocRef);
           
           if (!userDoc.exists()) {
@@ -3815,22 +3833,25 @@ export default function App() {
             handleFirestoreError(error, OperationType.LIST, `users/${fUser.uid}/vehicles`);
           });
 
-          setLoading(false);
           return () => {
             unsubLogs();
             unsubVehicles();
           };
-        } catch (error) {
-          handleFirestoreError(error, OperationType.GET, `users/${fUser.uid}`);
+        } else {
+          setUser(null);
+          setFuelLogs([]);
         }
-      } else {
-        setUser(null);
-        setFuelLogs([]);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, fUser ? `users/${fUser.uid}` : 'auth');
+      } finally {
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleSaveVehicle = async (vehicle: Vehicle) => {
@@ -3936,15 +3957,33 @@ export default function App() {
     );
   }
 
+  if (!auth || !db) {
+    return (
+      <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-10 text-white text-center">
+        <div className="w-24 h-24 bg-white/10 rounded-3xl flex items-center justify-center mb-8">
+          <Settings className="w-12 h-12 text-white" />
+        </div>
+        <h1 className="text-4xl font-extrabold font-headline mb-4 tracking-tight">Configuración Requerida</h1>
+        <p className="text-white/80 max-w-md mx-auto mb-10 leading-relaxed font-medium">
+          No se ha detectado una Llave de API de Firebase válida. Por favor, configura <code className="bg-white/20 px-2 py-1 rounded">VITE_FIREBASE_API_KEY</code> en tu archivo de entorno para activar los servicios de autenticación y base de datos.
+        </p>
+        <div className="bg-white/10 p-6 rounded-2xl border border-white/10 text-left w-full max-w-lg">
+          <p className="text-xs font-bold uppercase tracking-widest mb-4 opacity-60">Instrucciones de Reparación:</p>
+          <ol className="text-sm space-y-4 text-white/90">
+            <li className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">1</span><span>Abre el archivo <code className="bg-white/20 px-1.5 py-0.5 rounded">.env.local</code> en la raíz del proyecto.</span></li>
+            <li className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">2</span><span>Añade <code className="bg-white/20 px-1.5 py-0.5 rounded">VITE_FIREBASE_API_KEY="TU_KEY_AQUI"</code></span></li>
+            <li className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">3</span><span>Reinicia el servidor de desarrollo.</span></li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
   if (!firebaseUser || !user) {
     return <Login />;
   }
 
-  const filteredLogs = useMemo(() => {
-    return selectedVehicleId
-      ? fuelLogs.filter(log => log.vehicleId === selectedVehicleId)
-      : fuelLogs;
-  }, [fuelLogs, selectedVehicleId]);
+
 
   const renderScreen = () => {
     switch (activeTab) {

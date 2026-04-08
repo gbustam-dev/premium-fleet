@@ -1,4 +1,4 @@
-const CACHE_NAME = 'premium-fleet-v1';
+const CACHE_NAME = 'premium-fleet-v3';
 const urlsToCache = [
   '/',
   '/index.html',

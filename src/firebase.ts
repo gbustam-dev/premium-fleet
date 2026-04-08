@@ -5,18 +5,30 @@ import { initializeFirestore } from 'firebase/firestore';
 // Import the Firebase configuration
 import firebaseConfig from '../firebase-applet-config.json';
 
-// Initialize Firebase SDK
-const app = initializeApp({
-  ...firebaseConfig,
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey
-});
+let app;
+let db: any;
+let auth: any;
+const googleProvider = new GoogleAuthProvider();
 
-// Initialize services
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-}, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+try {
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey;
+  if (!apiKey || apiKey === "") {
+    console.warn("VITE_FIREBASE_API_KEY is missing. Firebase services will not be available.");
+  } else {
+    app = initializeApp({
+      ...firebaseConfig,
+      apiKey: apiKey
+    });
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    }, firebaseConfig.firestoreDatabaseId);
+    auth = getAuth(app);
+  }
+} catch (error) {
+  console.error("Failed to initialize Firebase:", error);
+}
+
+export { db, auth, googleProvider };
 
 // Auth functions
 export const signInWithGoogle = async () => {
