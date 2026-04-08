@@ -20,3 +20,7 @@
 ## 2024-05-21 - UTC Timezone Shifts in Local Date String Generation
 **Learning:** When attempting to bypass `new Date()` allocations by generating ISO strings from local `Date` objects, using `last30Days.toISOString().split('T')[0]` is dangerous. Because `toISOString()` returns UTC time, it can cause the resulting date string to shift backwards or forwards by a day depending on the user's timezone offset and the time of day. This creates subtle, intermittent bugs in filtering logic.
 **Action:** Always manually assemble local date strings using `.getFullYear()`, `.getMonth() + 1`, and `.getDate()` padded with `padStart(2, '0')` when comparing against local date strings (YYYY-MM-DD), avoiding `toISOString()` entirely unless specifically working in UTC.
+
+## 2024-05-22 - Replacing new Date() inside map loops with String Manipulation
+**Learning:** Instantiating `new Date()` inside `.map()` loops during component rendering causes performance overhead and memory pressure, as well as possible timezone shift issues when only the string components (like month and year) are needed.
+**Action:** Created a string manipulation helper `formatMonthYearStr` that directly extracts the month and year from a `YYYY-MM-DD` string, replacing the need for `new Date()` within high-frequency `.map()` functions like the ones used in the `Stats` component.
