@@ -11,9 +11,14 @@ let auth: any;
 const googleProvider = new GoogleAuthProvider();
 
 try {
-  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey;
+  const envKey = import.meta.env.VITE_FIREBASE_API_KEY;
+  const configKey = firebaseConfig.apiKey;
+  const apiKey = envKey || configKey;
+
+  console.log("Firebase Init: Checking API Key...", { envKeyPresent: !!envKey, configKeyPresent: !!configKey });
+
   if (!apiKey || apiKey === "") {
-    console.warn("VITE_FIREBASE_API_KEY is missing. Firebase services will not be available.");
+    console.error("CRITICAL: VITE_FIREBASE_API_KEY is missing. Application cannot proceed.");
   } else {
     app = initializeApp({
       ...firebaseConfig,
@@ -21,11 +26,12 @@ try {
     });
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
-    }, firebaseConfig.firestoreDatabaseId);
+    }, (firebaseConfig as any).firestoreDatabaseId);
     auth = getAuth(app);
+    console.log("Firebase Init: Services initialized successfully.");
   }
 } catch (error) {
-  console.error("Failed to initialize Firebase:", error);
+  console.error("Firebase Init: Failed to initialize Firebase:", error);
 }
 
 export { db, auth, googleProvider };

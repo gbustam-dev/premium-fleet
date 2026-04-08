@@ -33,7 +33,8 @@ import {
   Upload,
   FileJson,
   FileSpreadsheet,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import * as XLSX from 'xlsx';
@@ -3986,22 +3987,60 @@ export default function App() {
 
   if (!auth || !db) {
     return (
-      <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-10 text-white text-center">
-        <div className="w-24 h-24 bg-white/10 rounded-3xl flex items-center justify-center mb-8">
-          <Settings className="w-12 h-12 text-white" />
+      <div className="min-h-screen bg-[#0A0A14] flex flex-col items-center justify-center p-10 text-white text-center selection:bg-primary/30">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 blur-[120px] rounded-full"></div>
         </div>
-        <h1 className="text-4xl font-extrabold font-headline mb-4 tracking-tight">Configuración Requerida</h1>
-        <p className="text-white/80 max-w-md mx-auto mb-10 leading-relaxed font-medium">
-          No se ha detectado una Llave de API de Firebase válida. Por favor, configura <code className="bg-white/20 px-2 py-1 rounded">VITE_FIREBASE_API_KEY</code> en tu archivo de entorno para activar los servicios de autenticación y base de datos.
-        </p>
-        <div className="bg-white/10 p-6 rounded-2xl border border-white/10 text-left w-full max-w-lg">
-          <p className="text-xs font-bold uppercase tracking-widest mb-4 opacity-60">Instrucciones de Reparación:</p>
-          <ol className="text-sm space-y-4 text-white/90">
-            <li className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">1</span><span>Abre el archivo <code className="bg-white/20 px-1.5 py-0.5 rounded">.env.local</code> en la raíz del proyecto.</span></li>
-            <li className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">2</span><span>Añade <code className="bg-white/20 px-1.5 py-0.5 rounded">VITE_FIREBASE_API_KEY="TU_KEY_AQUI"</code></span></li>
-            <li className="flex gap-4"><span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">3</span><span>Reinicia el servidor de desarrollo.</span></li>
-          </ol>
-        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 max-w-xl w-full"
+        >
+          <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary-container rounded-[2rem] flex items-center justify-center mb-10 mx-auto shadow-2xl shadow-primary/20 border border-white/10">
+            <Settings className="w-12 h-12 text-white animate-[spin_10s_linear_infinite]" />
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl font-black font-headline mb-6 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+            Configuración Requerida
+          </h1>
+          
+          <p className="text-white/70 text-lg mb-12 leading-relaxed font-medium">
+            No se ha detectado una Llave de API de Firebase válida. Los servicios de la nube están inactivos.
+          </p>
+
+          <div className="bg-white/[0.03] backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-left mb-10 shadow-inner">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-6 text-primary-container/80">Guía de Resolución:</p>
+            <ol className="space-y-6">
+              {[
+                { step: 1, text: "Abre el archivo .env.local en la carpeta raíz.", code: ".env.local" },
+                { step: 2, text: "Añade tu clave API de Firebase.", code: 'VITE_FIREBASE_API_KEY="AIza..."' },
+                { step: 3, text: "Guarda y reinicia el servidor.", code: "npm run dev" }
+              ].map((item) => (
+                <li key={item.step} className="flex gap-5 group">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black group-hover:bg-primary group-hover:border-primary transition-all duration-300">
+                    {item.step}
+                  </span>
+                  <div className="flex flex-col gap-2 pt-1">
+                     <p className="text-sm font-bold text-white/90">{item.text}</p>
+                     <code className="text-[10px] font-mono text-primary-container/60 bg-white/5 px-2 py-1 rounded-md border border-white/5 self-start">
+                       {item.code}
+                     </code>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full py-5 px-8 rounded-2xl bg-white text-primary font-black text-sm uppercase tracking-[0.15em] hover:bg-white/90 active:scale-[0.98] transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-3"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Reintentar Conexión
+          </button>
+        </motion.div>
       </div>
     );
   }
