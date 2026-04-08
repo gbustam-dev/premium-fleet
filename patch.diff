@@ -1,0 +1,47 @@
+--- src/App.tsx
++++ src/App.tsx
+@@ -1399,19 +1399,19 @@
+                   </div>
+                 )}
+
+-                <div className="absolute bottom-4 right-4 md:top-4 md:bottom-auto flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
++                <div className="absolute bottom-4 right-4 md:top-4 md:bottom-auto flex gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                   <button
+                     aria-label="Editar registro"
+                     onClick={(e) => { e.stopPropagation(); onEdit(log); }}
+-                    className="p-2 bg-surface-container-low rounded-full text-primary hover:bg-primary hover:text-white transition-colors"
++                    className="p-2 bg-surface-container-low rounded-full text-primary hover:bg-primary hover:text-white focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors"
+                     title="Editar"
+                   >
+                     <Edit2 className="w-4 h-4" />
+                   </button>
+                   <button
+                     aria-label="Eliminar registro"
+                     onClick={(e) => { e.stopPropagation(); onDelete(log.id); }}
+-                    className="p-2 bg-surface-container-low rounded-full text-error hover:bg-error hover:text-white transition-colors"
++                    className="p-2 bg-surface-container-low rounded-full text-error hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-error outline-none transition-colors"
+                     title="Eliminar"
+                   >
+                     <Trash2 className="w-4 h-4" />
+@@ -3546,16 +3546,16 @@
+                       <p className="text-xs font-bold text-outline uppercase tracking-widest">{v.make} {v.model} • {v.year}</p>
+                     </div>
+                   </div>
+-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
++                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                     <button
+                       aria-label="Editar vehículo"
+                       onClick={() => startEditVehicle(v)}
+-                      className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors"
++                      className="p-2 text-primary hover:bg-primary/10 rounded-full focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors"
+                     >
+                       <Settings className="w-4 h-4" />
+                     </button>
+                     <button
+                       aria-label="Eliminar vehículo"
+                       onClick={() => onDeleteVehicle(v.id)}
+-                      className="p-2 text-error hover:bg-error/10 rounded-full transition-colors"
++                      className="p-2 text-error hover:bg-error/10 rounded-full focus-visible:ring-2 focus-visible:ring-error outline-none transition-colors"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>

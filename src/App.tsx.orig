@@ -5,19 +5,19 @@
 
 import React, { useState, useMemo, useEffect, Component } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Car, 
-  Settings, 
-  LayoutDashboard, 
-  History as HistoryIcon, 
-  TrendingUp, 
-  User, 
-  Plus, 
-  Leaf, 
-  Fuel, 
-  Calendar, 
-  Clock, 
-  Gauge, 
+import {
+  Car,
+  Settings,
+  LayoutDashboard,
+  History as HistoryIcon,
+  TrendingUp,
+  User,
+  Plus,
+  Leaf,
+  Fuel,
+  Calendar,
+  Clock,
+  Gauge,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -40,13 +40,13 @@ import * as XLSX from 'xlsx';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  AreaChart, 
-  Area, 
+import {
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  AreaChart,
+  Area,
   CartesianGrid,
   ScatterChart,
   Scatter,
@@ -58,9 +58,9 @@ import {
   Bar
 } from 'recharts';
 
-import { 
-  VEHICLE_BRANDS, 
-  VEHICLE_MODELS, 
+import {
+  VEHICLE_BRANDS,
+  VEHICLE_MODELS,
   DEFAULT_EFFICIENCIES,
   COMMON_PROPULSIONS
 } from './constants/vehicleData';
@@ -108,7 +108,7 @@ const calculateLogStats = (currentLog: { mileage: number, liters: number, totalC
 
   const currentDateTimeStr = `${currentLog.date}T${currentLog.time || '00:00'}`;
   const currentDateTime = new Date(currentDateTimeStr);
-  
+
   const vehicleLogs = getSortedVehicleLogs(allLogs, currentLog.vehicleId);
 
   // Find the log immediately before the current entry
@@ -124,14 +124,14 @@ const calculateLogStats = (currentLog: { mileage: number, liters: number, totalC
     const prevLogs = vehicleLogs.filter(l => `${l.date}T${l.time || '00:00'}` <= currentDateTimeStr);
     prevLog = prevLogs.length > 0 ? prevLogs[prevLogs.length - 1] : null;
   }
-  
+
   if (!prevLog) return null;
 
   const distance = currentLog.mileage - prevLog.mileage;
   if (distance <= 0) return null;
 
   const efficiency = distance / currentLog.liters;
-  
+
   const prevDate = new Date(`${prevLog.date}T${prevLog.time || '00:00'}`);
   const daysElapsed = Math.max(1, Math.ceil(Math.abs(currentDateTime.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)));
   const costPerDay = currentLog.totalCost / daysElapsed;
@@ -140,7 +140,7 @@ const calculateLogStats = (currentLog: { mileage: number, liters: number, totalC
   // Calculate previous efficiency for comparison
   const prevLogIdxInAll = vehicleLogs.findIndex(l => l.id === prevLog?.id);
   const prevPrevLog = prevLogIdxInAll > 0 ? vehicleLogs[prevLogIdxInAll - 1] : null;
-  
+
   let prevEfficiency = 0;
   let efficiencyChange = 0;
 
@@ -220,12 +220,12 @@ const EfficiencySummary = ({ stats, compact = false }: { stats: any, compact?: b
           <div className="h-[40px] w-24">
             <ResponsiveContainer width="99%" height="100%" debounce={50}>
               <AreaChart data={stats.history}>
-                <Area 
-                  type="monotone" 
-                  dataKey="efficiency" 
-                  stroke="#1A237E" 
-                  fill="#1A237E" 
-                  fillOpacity={0.1} 
+                <Area
+                  type="monotone"
+                  dataKey="efficiency"
+                  stroke="#1A237E"
+                  fill="#1A237E"
+                  fillOpacity={0.1}
                   strokeWidth={2}
                   dot={false}
                 />
@@ -281,8 +281,8 @@ const EfficiencySummary = ({ stats, compact = false }: { stats: any, compact?: b
               {Math.abs(stats.efficiencyChange).toFixed(1)}%
             </div>
             <span className="text-sm font-medium text-secondary">
-              {stats.efficiencyChange >= 0 
-                ? 'Mejora en eficiencia respecto al último tanque' 
+              {stats.efficiencyChange >= 0
+                ? 'Mejora en eficiencia respecto al último tanque'
                 : 'Disminución en eficiencia respecto al último tanque'}
             </span>
           </div>
@@ -299,7 +299,7 @@ const stationLogoCache = new Map<string, string>();
 
 const getStationLogo = (name: string) => {
   if (!name) return 'https://ui-avatars.com/api/?name=Gas+Station&background=random&color=fff&size=128&bold=true&format=svg';
-  
+
   if (stationLogoCache.has(name)) {
     return stationLogoCache.get(name)!;
   }
@@ -312,7 +312,7 @@ const getStationLogo = (name: string) => {
 const computeStationLogo = (name: string): string => {
   const lowerName = name.toLowerCase();
   const getFavicon = (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-  
+
   if (lowerName.includes('copec') || lowerName.includes('pronto') || lowerName.includes('punto') || lowerName.includes('gasolinera central')) return 'https://upload.wikimedia.org/wikipedia/commons/9/92/Copec_Logo_2023.svg';
   if (lowerName.includes('aramco')) return 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Saudi_aramco_logo.svg';
   if (lowerName.includes('shell') || lowerName.includes('enex') || lowerName.includes('upa')) return getFavicon('shell.com');
@@ -382,15 +382,15 @@ const formatMonthYear = (date: Date) => {
 import { toyotaCorollaCrossLogs } from './importData';
 import { auth, db, signInWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { 
-  collection, 
-  doc, 
-  onSnapshot, 
-  setDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
+import {
+  collection,
+  doc,
+  onSnapshot,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
   orderBy,
   getDoc,
   getDocFromServer
@@ -421,7 +421,7 @@ const handleFirestoreError = (error: unknown, operationType: OperationType, path
   };
   // SEC-FIX: Do not log sensitive user information from auth.currentUser in the console
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  const readableMsg = error instanceof Error && error.message.includes('permission') 
+  const readableMsg = error instanceof Error && error.message.includes('permission')
     ? "Error de permisos: Asegúrate de completar todos los campos obligatorios y que los nombres no excedan los límites."
     : "Error al sincronizar con la base de datos. Por favor intenta de nuevo.";
   alert(readableMsg);
@@ -439,10 +439,10 @@ const fetchFromProxy = async (targetUrl: string) => {
     try {
       const res = await fetch(proxyUrl);
       if (!res.ok) continue;
-      
+
       const text = await res.text();
       let data;
-      
+
       try {
         const json = JSON.parse(text);
         // AllOrigins wraps content in a 'contents' field
@@ -452,7 +452,7 @@ const fetchFromProxy = async (targetUrl: string) => {
         // If not JSON, it might be the raw string from CodeTabs or others
         data = JSON.parse(text);
       }
-      
+
       if (data) return data;
     } catch (e) { console.warn(`Proxy ${proxyUrl} failed, trying next...`); }
   }
@@ -473,7 +473,7 @@ interface ErrorBoundaryState {
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState;
   public props: ErrorBoundaryProps;
-  
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.props = props;
@@ -498,7 +498,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           <div className="bg-error/10 p-8 rounded-3xl max-w-md w-full border border-error/20">
             <h2 className="text-2xl font-bold text-error mb-4">¡Ups!</h2>
             <p className="text-secondary mb-8">{errorMessage}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="bg-primary text-white py-3 px-8 rounded-xl font-bold hover:bg-primary-container transition-colors"
             >
@@ -516,7 +516,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 const Login = () => {
   return (
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-6 text-center">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-md w-full bg-surface-container-low p-12 rounded-[2.5rem] shadow-[0_24px_64px_rgba(26,35,126,0.1)]"
@@ -528,7 +528,7 @@ const Login = () => {
         <p className="text-secondary mb-12 leading-relaxed">
           Gestiona la eficiencia de tu flota con precisión quirúrgica. Inicia sesión para comenzar tu viaje.
         </p>
-        <button 
+        <button
           onClick={signInWithGoogle}
           className="w-full py-5 px-8 bg-white text-primary font-bold rounded-2xl shadow-sm border border-surface-variant flex items-center justify-center gap-4 hover:bg-surface-variant transition-all active:scale-[0.98]"
         >
@@ -543,7 +543,7 @@ const Login = () => {
 const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: UserProfile, onMigrateLogs: () => Promise<void>, onUpdateUser: (u: UserProfile) => Promise<void>, onClose: () => void }) => {
   const [apiKey, setApiKey] = useState(() => user.geminiApiKey || localStorage.getItem('geminiApiKey') || process.env.GEMINI_API_KEY || '');
   const [migrating, setMigrating] = useState(false);
-  
+
   const handleSave = async () => {
     localStorage.setItem('geminiApiKey', apiKey);
     if (apiKey !== user.geminiApiKey) {
@@ -555,7 +555,7 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface/80 backdrop-blur-sm" onClick={onClose}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -571,11 +571,11 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
         <div className="space-y-4">
           <div>
             <label htmlFor="gemini-api-key" className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">Gemini API Key</label>
-            <input 
+            <input
               id="gemini-api-key"
-              type="text" 
-              value={apiKey} 
-              onChange={e => setApiKey(e.target.value)} 
+              type="text"
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
               placeholder="AIzaSy..."
               className="w-full bg-surface-container-low px-4 py-3 rounded-xl border border-surface-variant focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline/40"
             />
@@ -584,10 +584,10 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
           <button onClick={handleSave} className="w-full py-4 bg-primary text-white rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:shadow-xl hover:bg-primary-container active:scale-95 transition-all">
             Guardar Configuración
           </button>
-          
+
           <div className="pt-6 border-t border-outline/10">
             <h3 className="text-xs font-bold uppercase tracking-widest text-secondary mb-4">Mantenimiento</h3>
-            <button 
+            <button
               onClick={async () => {
                 if (confirm('¿Actualizar todos los registros a Gasolina 93 y Copec?')) {
                   setMigrating(true);
@@ -595,7 +595,7 @@ const SettingsModal = ({ user, onMigrateLogs, onUpdateUser, onClose }: { user: U
                   setMigrating(false);
                   alert('Registros actualizados correctamente.');
                 }
-              }} 
+              }}
               disabled={migrating}
               className="w-full py-4 bg-surface-container-low text-primary rounded-xl font-bold uppercase tracking-widest text-xs border border-primary/20 hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
             >
@@ -637,10 +637,10 @@ const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChan
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
-        
+
         if (tab.isSpecial) {
           return (
-            <button 
+            <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               aria-label={tab.ariaLabel}
@@ -654,7 +654,7 @@ const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChan
         }
 
         return (
-          <button 
+          <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             aria-label={tab.ariaLabel}
@@ -664,7 +664,7 @@ const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChan
           >
             <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''}`} />
             {isActive && (
-              <motion.div 
+              <motion.div
                 layoutId="navIndicator"
                 className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full"
               />
@@ -680,7 +680,7 @@ const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChan
 
 const VehicleSelector = ({ vehicles, selectedVehicleId, onSelect, className = "" }: { vehicles: Vehicle[], selectedVehicleId: string | null, onSelect: (id: string) => void, className?: string }) => {
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
-  
+
   return (
     <div className={`relative group ${className}`}>
       <button aria-haspopup="listbox" className="flex items-center gap-3 bg-surface-container-low px-4 py-2 rounded-xl border border-surface-variant hover:bg-surface-variant transition-all focus-visible:ring-2 focus-visible:ring-primary outline-none">
@@ -691,13 +691,13 @@ const VehicleSelector = ({ vehicles, selectedVehicleId, onSelect, className = ""
         </div>
         <ChevronDown className="w-4 h-4 text-outline ml-2 group-hover:rotate-180 group-focus-within:rotate-180 transition-transform" />
       </button>
-      
+
       <div role="listbox" className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-surface-variant opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 overflow-hidden">
         {vehicles.length === 0 ? (
           <div className="px-6 py-4 text-sm text-secondary italic">No hay vehículos registrados</div>
         ) : (
           vehicles.map(v => (
-            <button 
+            <button
               role="option"
               aria-selected={selectedVehicleId === v.id}
               key={v.id}
@@ -740,12 +740,12 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
     const currentMonthStr = String(now.getMonth() + 1).padStart(2, '0');
     const currentYearStr = String(now.getFullYear());
     const targetMonthPrefix = `${currentYearStr}-${currentMonthStr}`;
-    
+
     const monthlyLogs = fuelLogs.filter(log => log.date.startsWith(targetMonthPrefix));
-    
+
     const monthlyTotalCost = monthlyLogs.reduce((acc, log) => acc + log.totalCost, 0);
     const sortedLogs = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-    
+
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
       const distance = sortedLogs[sortedLogs.length - 1].mileage - sortedLogs[0].mileage;
@@ -762,7 +762,7 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
     last90Days.setDate(last90Days.getDate() - 90);
     const last90DaysStr = `${last90Days.getFullYear()}-${String(last90Days.getMonth() + 1).padStart(2, '0')}-${String(last90Days.getDate()).padStart(2, '0')}`;
     const logs90Days = sortedLogs.filter(l => l.date >= last90DaysStr);
-    
+
     let distance90Days = 0;
     let monthsInWindow = 3;
     if (logs90Days.length >= 2) {
@@ -819,7 +819,7 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
       setLoadingPrices(false);
       return;
     }
-    
+
     setLoadingPrices(true);
     setErrorPrices(null);
     try {
@@ -829,7 +829,7 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
           const ai = new GoogleGenAI({ apiKey: apiKey! });
           const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-lite",
-            contents: `Eres una API técnica que solo responde en JSON. Busca en la web el precio en pesos chilenos de "${fuelToSearch}" hoy en estaciones de Chile cerca de Lat=${latitude}, Lon=${longitude} (ej. en sitios como bencinaenlinea.cl, copec). 
+            contents: `Eres una API técnica que solo responde en JSON. Busca en la web el precio en pesos chilenos de "${fuelToSearch}" hoy en estaciones de Chile cerca de Lat=${latitude}, Lon=${longitude} (ej. en sitios como bencinaenlinea.cl, copec).
             RESPONDE ÚNICAMENTE UN OBJETO JSON VÁLIDO CON ESTA ESTRUCTURA: {"avg": 1310, "min": 1280, "max": 1350, "location": "Nombre Comuna, Chile"}`,
             config: { tools: [{ googleSearch: {} }] }
           });
@@ -963,7 +963,7 @@ const Projection = ({ user, fuelLogs, vehicles, selectedVehicleId, onSelectVehic
 
 const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onNavigateToNew }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void, onNavigateToNew: () => void }) => {
   const [viewDate, setViewDate] = useState(new Date());
-  
+
   const handlePrevMonth = () => setViewDate(prev => {
     const d = new Date(prev);
     d.setMonth(d.getMonth() - 1);
@@ -996,7 +996,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     const targetMonthStr = String(viewDate.getMonth() + 1).padStart(2, '0');
     const targetYearStr = String(viewDate.getFullYear());
     const targetMonthPrefix = `${targetYearStr}-${targetMonthStr}`;
-    
+
     // Monthly filtering
     const monthlyLogs = fuelLogs.filter(log => {
       return log.date.startsWith(targetMonthPrefix) && (!selectedVehicleId || log.vehicleId === selectedVehicleId);
@@ -1010,7 +1010,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     const sortedLogs = [...fuelLogs]
       .filter(l => !selectedVehicleId || l.vehicleId === selectedVehicleId)
       .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-    
+
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {
       const distance = sortedLogs[sortedLogs.length - 1].mileage - sortedLogs[0].mileage;
@@ -1024,7 +1024,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
     const targetEfficiency = selectedVehicle?.targetEfficiency || 10;
     let monthEfficiency = 0;
     let savedLiters = 0;
-    
+
     if (monthlyLogs.length >= 2) {
       const sortedMonthly = [...monthlyLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
       const mDistance = sortedMonthly[sortedMonthly.length - 1].mileage - sortedMonthly[0].mileage;
@@ -1073,7 +1073,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
   const isCurrentMonth = viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear();
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -1082,7 +1082,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       {/* Month Navigation & Vehicle Selector */}
       <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
         <div className="flex items-center gap-4 bg-surface-container-low p-1.5 rounded-2xl border border-secondary/5">
-          <button 
+          <button
             aria-label="Mes anterior"
             onClick={handlePrevMonth}
             className="p-3 hover:bg-surface-variant rounded-xl transition-colors text-primary"
@@ -1093,7 +1093,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-outline opacity-60 mb-0.5">Periodo de Análisis</p>
             <h3 className="text-lg font-extrabold font-headline text-primary capitalize">{formatMonthYear(viewDate)}</h3>
           </div>
-          <button 
+          <button
             aria-label="Mes siguiente"
             onClick={handleNextMonth}
             disabled={isCurrentMonth}
@@ -1103,10 +1103,10 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
           </button>
         </div>
 
-        <VehicleSelector 
-          vehicles={vehicles} 
-          selectedVehicleId={selectedVehicleId} 
-          onSelect={onSelectVehicle} 
+        <VehicleSelector
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicleId}
+          onSelect={onSelectVehicle}
         />
       </header>
 
@@ -1133,7 +1133,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
               <span className="text-sm font-bold">{stats.budgetPercentage}%</span>
             </div>
             <div className="h-3 w-full bg-white/20 rounded-full overflow-hidden">
-              <motion.div 
+              <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${stats.budgetPercentage}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
@@ -1144,7 +1144,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
               Llevas gastado el {stats.budgetPercentage}% de tu presupuesto estimado para este periodo.
             </p>
           </div>
-          
+
           <Fuel className="absolute -bottom-10 -right-10 w-64 h-64 text-white opacity-[0.03] rotate-12" />
         </div>
 
@@ -1163,15 +1163,15 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
           <div className="relative w-48 h-48 mb-8">
             <svg className="w-full h-full transform -rotate-90 overflow-visible">
               <circle className="text-surface-variant" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" strokeWidth="12" />
-              <motion.circle 
+              <motion.circle
                 initial={{ strokeDashoffset: 552.9 }}
                 animate={{ strokeDashoffset: 552.9 * (1 - stats.operationalEfficiency / 100) }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
-                className="text-primary" 
-                cx="96" cy="96" fill="transparent" r="88" 
-                stroke="currentColor" strokeWidth="16" 
-                strokeDasharray="552.9" 
-                strokeLinecap="round" 
+                className="text-primary"
+                cx="96" cy="96" fill="transparent" r="88"
+                stroke="currentColor" strokeWidth="16"
+                strokeDasharray="552.9"
+                strokeLinecap="round"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -1255,15 +1255,15 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(26,35,126,0.03)" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }} 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
                   minTickGap={20}
                 />
                 <YAxis hide domain={['auto', 'auto']} />
-                <Tooltip 
+                <Tooltip
                   cursor={{ stroke: '#1A237E', strokeWidth: 1, strokeDasharray: '4 4' }}
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
@@ -1277,10 +1277,10 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
                     return null;
                   }}
                 />
-                <Area 
+                <Area
                   type="monotone"
-                  dataKey="mileage" 
-                  stroke="#1A237E" 
+                  dataKey="mileage"
+                  stroke="#1A237E"
                   strokeWidth={5}
                   fillOpacity={1}
                   fill="url(#colorMileage)"
@@ -1305,9 +1305,9 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center overflow-hidden">
                       {getStationLogo(log.stationName) ? (
-                        <img 
-                          src={getStationLogo(log.stationName)!} 
-                          alt={log.stationName} 
+                        <img
+                          src={getStationLogo(log.stationName)!}
+                          alt={log.stationName}
                           className="w-8 h-8 object-contain"
                           referrerPolicy="no-referrer"
                         />
@@ -1336,7 +1336,7 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       </section>
 
       {/* FAB */}
-      <button 
+      <button
         aria-label="Añadir nuevo registro"
         onClick={onNavigateToNew}
         className="fixed bottom-28 right-6 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl shadow-[0_8px_32px_rgba(26,35,126,0.25)] flex items-center justify-center active:scale-90 transition-all duration-200 z-50"
@@ -1360,7 +1360,7 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
   }, [fuelLogs]);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -1377,11 +1377,11 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
             <span className="text-sm font-bold uppercase tracking-wider text-outline mb-2">Litros Totales / Mes</span>
           </div>
         </div>
-        
-        <VehicleSelector 
-          vehicles={vehicles} 
-          selectedVehicleId={selectedVehicleId} 
-          onSelect={onSelectVehicle} 
+
+        <VehicleSelector
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicleId}
+          onSelect={onSelectVehicle}
         />
       </section>
 
@@ -1398,20 +1398,20 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
                     </div>
                   </div>
                 )}
-                
-                <div className="absolute bottom-4 right-4 md:top-4 md:bottom-auto flex gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                  <button 
+
+                <div className="absolute bottom-4 right-4 md:top-4 md:bottom-auto flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
                     aria-label="Editar registro"
                     onClick={(e) => { e.stopPropagation(); onEdit(log); }}
-                    className="p-2 bg-surface-container-low rounded-full text-primary hover:bg-primary hover:text-white focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors"
+                    className="p-2 bg-surface-container-low rounded-full text-primary hover:bg-primary hover:text-white transition-colors"
                     title="Editar"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button 
+                  <button
                     aria-label="Eliminar registro"
                     onClick={(e) => { e.stopPropagation(); onDelete(log.id); }}
-                    className="p-2 bg-surface-container-low rounded-full text-error hover:bg-error hover:text-white focus-visible:ring-2 focus-visible:ring-error outline-none transition-colors"
+                    className="p-2 bg-surface-container-low rounded-full text-error hover:bg-error hover:text-white transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1421,9 +1421,9 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
                 <div className="flex items-start gap-5">
                   <div className="bg-primary-container/10 p-4 rounded-xl flex items-center justify-center overflow-hidden">
                     {getStationLogo(log.stationName) ? (
-                      <img 
-                        src={getStationLogo(log.stationName)!} 
-                        alt={log.stationName} 
+                      <img
+                        src={getStationLogo(log.stationName)!}
+                        alt={log.stationName}
                         className="w-8 h-8 object-contain"
                         referrerPolicy="no-referrer"
                       />
@@ -1490,8 +1490,8 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
     const parts = cleanVal.split('.');
     // Add thousands separator to the integer part (using dot)
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    // Rejoin with decimal part if it exists (using comma for display if we want to be consistent with es-ES, 
-    // but the user might just want the thousands separator to be dot and keep dot for decimals? 
+    // Rejoin with decimal part if it exists (using comma for display if we want to be consistent with es-ES,
+    // but the user might just want the thousands separator to be dot and keep dot for decimals?
     // Usually it's one or the other. If thousands is dot, decimal is comma.)
     return parts.length > 1 ? `${parts[0]},${parts[1].slice(0, 2)}` : parts[0];
   };
@@ -1592,7 +1592,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         const lng = position.coords.longitude;
         setLocation({ latitude: lat, longitude: lng });
         setGettingLocation(false);
-        
+
         // Fetch nearby stations using Gemini
         await searchNearbyStations(lat, lng);
       },
@@ -1631,7 +1631,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             });
 
           const currentLogDateStr = `${date}T${time || '00:00'}`;
-          
+
           // Find the log immediately before and after the current date/time
           const prevLog = [...vehicleLogs].reverse().find(l => `${l.date}T${l.time || '00:00'}` <= currentLogDateStr);
           const nextLog = vehicleLogs.find(l => `${l.date}T${l.time || '00:00'}` >= currentLogDateStr);
@@ -1710,7 +1710,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
     currentErrors = validateField('liters', liters, currentErrors);
     currentErrors = validateField('pricePerLiter', pricePerLiter, currentErrors);
     currentErrors = validateField('totalCost', totalCost, currentErrors);
-    
+
     setErrors(currentErrors);
     return Object.keys(currentErrors).length === 0;
   };
@@ -1718,10 +1718,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
   const handleLitersChange = (val: string) => {
     const cleanVal = parseSeparators(val);
     if (isNaN(Number(cleanVal)) && cleanVal !== '.') return;
-    
+
     setLiters(formatWithSeparators(cleanVal));
     validate('liters', cleanVal);
-    
+
     const l = parseFloat(cleanVal);
     const p = parseFloat(parseSeparators(pricePerLiter));
     const t = parseFloat(parseSeparators(totalCost));
@@ -1743,7 +1743,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
     setPricePerLiter(formatWithSeparators(cleanVal));
     validate('pricePerLiter', cleanVal);
-    
+
     const p = parseFloat(cleanVal);
     const l = parseFloat(parseSeparators(liters));
     const t = parseFloat(parseSeparators(totalCost));
@@ -1765,7 +1765,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
     setTotalCost(formatWithSeparators(cleanVal));
     validate('totalCost', cleanVal);
-    
+
     const t = parseFloat(cleanVal);
     const l = parseFloat(parseSeparators(liters));
     const p = parseFloat(parseSeparators(pricePerLiter));
@@ -1788,7 +1788,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
@@ -1804,7 +1804,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           </span>
         </div>
         <p className="text-secondary max-w-md">
-          {editingLog 
+          {editingLog
             ? 'Modifica los detalles del repostaje seleccionado para corregir cualquier error en el historial.'
             : 'Ingresa los detalles de tu último repostaje para mantener el flujo de eficiencia de tu flota actualizado.'}
         </p>
@@ -1825,7 +1825,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               type="button"
               onClick={handleGetLocation}
               disabled={gettingLocation}
@@ -1835,7 +1835,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
               {location ? 'Actualizar' : 'Ubicarme'}
             </button>
             {location && (
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowMap(!showMap)}
                 className="text-xs font-bold uppercase tracking-widest bg-surface-container-low text-primary px-4 py-2 rounded-lg hover:bg-surface-variant transition-all"
@@ -1848,9 +1848,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
         {location && showMap && (
           <div className="h-64 w-full relative z-0">
-            <MapContainer 
-              center={[location.latitude, location.longitude]} 
-              zoom={15} 
+            <MapContainer
+              center={[location.latitude, location.longitude]}
+              zoom={15}
               style={{ height: '100%', width: '100%' }}
               scrollWheelZoom={false}
             >
@@ -1866,8 +1866,8 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                 </Popup>
               </Marker>
               {nearbyStations.map((station, i) => (
-                <Marker 
-                  key={i} 
+                <Marker
+                  key={i}
                   position={[station.latitude, station.longitude]}
                   eventHandlers={{
                     click: () => {
@@ -1880,7 +1880,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                     <div className="p-1">
                       <p className="font-bold text-xs">{station.name}</p>
                       {station.address && <p className="text-xs text-secondary">{station.address}</p>}
-                      <button 
+                      <button
                         type="button"
                         onClick={() => {
                           setStationName(station.name);
@@ -1902,7 +1902,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
       {/* Efficiency Comparison Section */}
       <AnimatePresence>
         {stats && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -1915,7 +1915,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
 
       <form className="space-y-10" onSubmit={async (e) => {
         e.preventDefault();
-        
+
         if (!validateAll()) return;
 
         setIsSubmitting(true);
@@ -1943,9 +1943,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           <label htmlFor="vehicleId" className="block text-sm font-semibold text-primary ml-1">Seleccionar Vehículo</label>
           <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.vehicleId ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
             <Car className={`${errors.vehicleId ? 'text-error' : 'text-outline'} w-5 h-5`} />
-            <select 
+            <select
               id="vehicleId"
-              className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none" 
+              className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none"
               value={vehicleId}
               onChange={(e) => {
                 setVehicleId(e.target.value);
@@ -1967,10 +1967,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             <label htmlFor="log-date" className="block text-sm font-semibold text-primary ml-1">Fecha del Registro</label>
             <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.date ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
               <Calendar className={`${errors.date ? 'text-error' : 'text-outline'} w-5 h-5`} />
-              <input 
+              <input
                 id="log-date"
-                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
-                type="date" 
+                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium"
+                type="date"
                 value={date}
                 onChange={(e) => {
                   setDate(e.target.value);
@@ -1984,10 +1984,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             <label htmlFor="log-time" className="block text-sm font-semibold text-primary ml-1">Hora</label>
             <div className={`bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 transition-shadow ${errors.time ? 'ring-2 ring-error/50' : 'focus-within:ring-primary/10'}`}>
               <Clock className={`${errors.time ? 'text-error' : 'text-outline'} w-5 h-5`} />
-              <input 
+              <input
                 id="log-time"
-                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
-                type="time" 
+                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium"
+                type="time"
                 value={time}
                 onChange={(e) => {
                   setTime(e.target.value);
@@ -2004,9 +2004,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             <label htmlFor="log-station" className="block text-sm font-semibold text-primary ml-1">Estación de Gasolina</label>
             <div className="bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow relative">
               {getStationLogo(stationName) ? (
-                <img 
-                  src={getStationLogo(stationName)!} 
-                  alt={stationName} 
+                <img
+                  src={getStationLogo(stationName)!}
+                  alt={stationName}
                   className="w-5 h-5 object-contain"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
@@ -2016,10 +2016,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
               ) : (
                 <MapPin className="text-outline w-5 h-5" />
               )}
-              <input 
+              <input
                 id="log-station"
-                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium" 
-                type="text" 
+                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium"
+                type="text"
                 placeholder="Nombre de la estación"
                 value={stationName}
                 onChange={(e) => setStationName(e.target.value)}
@@ -2031,7 +2031,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                   }
                 }}
               />
-              <button 
+              <button
                 aria-label="Buscar estaciones cercanas"
                 type="button"
                 onClick={() => {
@@ -2051,10 +2051,10 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
               <div className="flex items-center gap-3">
                 <label htmlFor="log-address" className="sr-only">Dirección</label>
                 <MapPin className="text-outline w-4 h-4" />
-                <input 
+                <input
                   id="log-address"
-                  className="bg-transparent border-none w-full focus:ring-0 text-secondary text-xs font-medium italic placeholder:not-italic" 
-                  type="text" 
+                  className="bg-transparent border-none w-full focus:ring-0 text-secondary text-xs font-medium italic placeholder:not-italic"
+                  type="text"
                   placeholder="Dirección (se agrega automáticamente)"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -2094,7 +2094,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                     </button>
                   ))}
                 </div>
-                <button 
+                <button
                   type="button"
                   onClick={() => setNoStationsFound(false)}
                   className="mt-4 w-full py-2 text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 rounded-lg hover:bg-primary/10 transition-all"
@@ -2110,7 +2110,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                     <Fuel className="w-4 h-4 text-primary" />
                     <span className="text-xs font-black uppercase tracking-widest text-primary">Estaciones Recomendadas</span>
                   </div>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setNearbyStations([])}
                     className="p-1 px-3 bg-primary/10 rounded-full text-[10px] font-bold text-primary uppercase hover:bg-primary/20 transition-all"
@@ -2132,9 +2132,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
                     >
                       <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:scale-110 transition-transform">
                         {getStationLogo(station.name) ? (
-                          <img 
-                            src={getStationLogo(station.name)!} 
-                            alt={station.name} 
+                          <img
+                            src={getStationLogo(station.name)!}
+                            alt={station.name}
                             className="w-6 h-6 object-contain"
                             referrerPolicy="no-referrer"
                           />
@@ -2162,9 +2162,9 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             <label htmlFor="fuelType" className="block text-sm font-semibold text-primary ml-1">Tipo de Combustible</label>
             <div className="bg-surface-container-low rounded-lg p-4 flex items-center gap-3 focus-within:ring-2 focus-within:ring-primary/10 transition-shadow">
               <Fuel className="text-outline w-5 h-5" />
-              <select 
+              <select
                 id="fuelType"
-                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none" 
+                className="bg-transparent border-none w-full focus:ring-0 text-primary font-medium appearance-none"
                 value={fuelType}
                 onChange={(e) => setFuelType(e.target.value as any)}
               >
@@ -2187,12 +2187,12 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             <Gauge className={`${errors.mileage ? 'text-error' : 'text-primary/40'} w-8 h-8`} />
           </div>
           <div className="relative">
-            <input 
+            <input
               id="mileage-input"
-              className={`w-full bg-surface-container-lowest text-3xl md:text-[2.5rem] font-bold font-headline py-6 pl-6 pr-16 rounded-xl border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.mileage ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
-              inputMode="numeric" 
-              placeholder="000,000" 
-              type="text" 
+              className={`w-full bg-surface-container-lowest text-3xl md:text-[2.5rem] font-bold font-headline py-6 pl-6 pr-16 rounded-xl border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.mileage ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`}
+              inputMode="numeric"
+              placeholder="000,000"
+              type="text"
               value={mileage}
               onChange={(e) => handleMileageChange(e.target.value)}
             />
@@ -2205,12 +2205,12 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
             <label htmlFor="liters" className="block text-sm font-bold text-primary uppercase tracking-widest">Litros</label>
             <div className="relative">
-              <input 
+              <input
                 id="liters"
-                className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.liters ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
-                inputMode="decimal" 
-                placeholder="0.00" 
-                type="text" 
+                className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.liters ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`}
+                inputMode="decimal"
+                placeholder="0.00"
+                type="text"
                 value={liters}
                 onChange={(e) => handleLitersChange(e.target.value)}
               />
@@ -2221,12 +2221,12 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
             <label htmlFor="pricePerLiter" className="block text-sm font-bold text-primary uppercase tracking-widest">Precio/L</label>
             <div className="relative">
-              <input 
+              <input
                 id="pricePerLiter"
-                className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.pricePerLiter ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
-                inputMode="decimal" 
-                placeholder="0.00" 
-                type="text" 
+                className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.pricePerLiter ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`}
+                inputMode="decimal"
+                placeholder="0.00"
+                type="text"
                 value={pricePerLiter}
                 onChange={(e) => handlePriceChange(e.target.value)}
               />
@@ -2237,12 +2237,12 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
           <div className="bg-surface-container-low rounded-xl p-6 space-y-4">
             <label htmlFor="totalCost" className="block text-sm font-bold text-primary uppercase tracking-widest">Total</label>
             <div className="relative">
-              <input 
+              <input
                 id="totalCost"
-                className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.totalCost ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`} 
-                inputMode="decimal" 
-                placeholder="0.00" 
-                type="text" 
+                className={`w-full bg-surface-container-lowest text-xl font-bold font-headline py-4 pl-4 pr-10 rounded-lg border-none focus:ring-2 text-primary placeholder:text-surface-variant transition-all ${errors.totalCost ? 'ring-2 ring-error/50' : 'focus:ring-primary/20'}`}
+                inputMode="decimal"
+                placeholder="0.00"
+                type="text"
                 value={totalCost}
                 onChange={(e) => handleTotalCostChange(e.target.value)}
               />
@@ -2262,7 +2262,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         </div>
 
         <div className="pt-6 flex flex-col gap-4">
-          <button 
+          <button
             type="submit"
             disabled={isSubmitting}
             className={`w-full py-5 px-8 rounded-lg bg-gradient-to-br from-primary to-primary-container text-white font-bold text-lg font-headline shadow-[0_8px_32px_rgba(26,35,126,0.15)] transition-all flex justify-center items-center gap-3 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-[0_12px_48px_rgba(26,35,126,0.25)] active:scale-[0.98]'}`}
@@ -2271,7 +2271,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
             {editingLog ? 'Actualizar Registro' : 'Guardar Registro'}
           </button>
           {editingLog && (
-            <button 
+            <button
               type="button"
               onClick={onCancel}
               className="w-full py-4 px-8 rounded-lg bg-surface-container-low text-primary font-bold text-sm uppercase tracking-widest hover:bg-surface-variant transition-all"
@@ -2320,11 +2320,11 @@ const CustomTooltip = ({ active, payload, label, unit }: any) => {
           <p className="text-sm font-bold text-primary">{payload[0].name || unit}</p>
           <div className="flex items-baseline gap-0.5">
             <p className="text-lg font-black text-primary font-headline tracking-tighter">
-              {typeof payload[0].value === 'number' ? 
-                (unit === 'L' ? formatLiters(payload[0].value) : 
-                 unit === 'KM/L' ? formatEfficiency(payload[0].value) : 
-                 unit.includes('KM') ? formatKm(payload[0].value) : 
-                 formatPrice(payload[0].value)) 
+              {typeof payload[0].value === 'number' ?
+                (unit === 'L' ? formatLiters(payload[0].value) :
+                 unit === 'KM/L' ? formatEfficiency(payload[0].value) :
+                 unit.includes('KM') ? formatKm(payload[0].value) :
+                 formatPrice(payload[0].value))
                 : payload[0].value}
             </p>
             <span className="text-[10px] font-bold text-secondary">{unit.replace('Score/', '')}</span>
@@ -2356,13 +2356,13 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
     const sortedLogs = [...fuelLogs].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     const totalRefuels = fuelLogs.length;
     const totalInvestment = fuelLogs.reduce((acc, log) => acc + log.totalCost, 0);
-    
+
     const minOdo = Math.min(...fuelLogs.map(l => l.mileage));
     const maxOdo = Math.max(...fuelLogs.map(l => l.mileage));
     const totalDistance = maxOdo - minOdo;
     const totalKilometers = maxOdo; // Current odometer
     const avgCostPerKm = totalDistance > 0 ? totalInvestment / totalDistance : 0;
-    
+
     const estimatedSavings = Math.round(totalInvestment * 0.1);
 
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
@@ -2411,24 +2411,24 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
       const dist = log.mileage - prev.mileage;
       const efficiency = dist / log.liters;
       if (!isFinite(efficiency) || efficiency <= 0) return null;
-      
+
       const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
       // Use a deterministic "pseudo-random" based on data to keep it stable but dynamic-looking
       const dataHash = (dist + log.liters + log.totalCost) % 10;
       const score = Math.round(normalizedEff * 80 + 10 + dataHash);
-      
-      return { 
+
+      return {
         score,
         efficiency: parseFloat(efficiency.toFixed(2)),
         displayScore: score,
         displayEfficiency: efficiency,
-        liters: log.liters, 
+        liters: log.liters,
         z: log.liters,
         label: `Carga #${i + 2}`,
         displayLabel: formatMonthYear(new Date(log.date)),
         fullDate: log.date,
         // Progresión de color: más claro para antiguas, más intenso para recientes
-        color: `hsl(220, 70%, ${70 - (i / sortedLogs.length) * 40}%)` 
+        color: `hsl(220, 70%, ${70 - (i / sortedLogs.length) * 40}%)`
       };
     }).filter((d): d is any => d !== null);
 
@@ -2457,7 +2457,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
   }, [fuelLogs, vehicles, selectedVehicleId]);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -2485,10 +2485,10 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             Visualizando datos de<br/>
             <span className="text-primary tracking-normal font-black text-xs">{fuelLogs.length} cargas registradas</span>
           </span>
-          <VehicleSelector 
-            vehicles={vehicles} 
-            selectedVehicleId={selectedVehicleId} 
-            onSelect={onSelectVehicle} 
+          <VehicleSelector
+            vehicles={vehicles}
+            selectedVehicleId={selectedVehicleId}
+            onSelect={onSelectVehicle}
           />
         </div>
       </section>
@@ -2572,7 +2572,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-2">Evolución de Rendimiento</p>
             <h3 className="font-headline text-3xl font-black text-primary tracking-tight">Rendimiento por Carga (KM/L)</h3>
           </div>
-          
+
           <div className="h-64 md:h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <AreaChart data={stats.efficiencyHistory}>
@@ -2583,31 +2583,31 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis 
-                  dataKey="label" 
+                <XAxis
+                  dataKey="label"
                   tickFormatter={(val) => stats.efficiencyHistory.find(d => d.label === val)?.displayLabel || val}
-                  axisLine={false} 
-                  tickLine={false} 
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
                   minTickGap={25}
                   dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
                   dx={-10}
                   domain={['dataMin - 1', 'dataMax + 1']}
                 />
                 <Tooltip content={<CustomTooltip unit="KM/L" />} />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
+                <Area
+                  type="monotone"
+                  dataKey="value"
                   name="Eficiencia"
-                  stroke="#1A237E" 
+                  stroke="#1A237E"
                   strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorEffLarge)" 
+                  fillOpacity={1}
+                  fill="url(#colorEffLarge)"
                   animationDuration={2000}
                 />
               </AreaChart>
@@ -2626,7 +2626,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
               {stats.priceVariation.length > 1 && stats.priceVariation[stats.priceVariation.length-1].price > stats.priceVariation[0].price ? 'Tendencia alcista' : 'Tendencia a la baja'}
             </div>
           </div>
-          
+
           <div className="h-64 md:h-80 w-full relative z-10 bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <AreaChart data={stats.priceVariation}>
@@ -2637,29 +2637,29 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis 
-                  dataKey="label" 
+                <XAxis
+                  dataKey="label"
                   tickFormatter={(val) => stats.priceVariation.find(d => d.label === val)?.displayLabel || val}
-                  axisLine={false} 
-                  tickLine={false} 
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
                   minTickGap={25}
                   dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#888' }}
                   dx={-10}
                   domain={['dataMin - 10', 'dataMax + 10']}
                 />
                 <Tooltip content={<CustomTooltip unit="$" />} />
-                <Area 
-                  type="monotone" 
-                  dataKey="price" 
+                <Area
+                  type="monotone"
+                  dataKey="price"
                   name="Precio"
-                  stroke="#1A237E" 
-                  strokeWidth={5} 
+                  stroke="#1A237E"
+                  strokeWidth={5}
                   fillOpacity={1}
                   fill="url(#colorPrice)"
                   dot={false}
@@ -2685,7 +2685,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
               </span>
             </div>
           </div>
-          
+
           <div className="h-80 md:h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -2696,37 +2696,37 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="5 5" stroke="rgba(0,0,0,0.05)" />
-                <XAxis 
-                  type="number" 
-                  dataKey="displayScore" 
-                  name="Puntaje" 
-                  unit="" 
-                  domain={[0, 100]} 
-                  axisLine={false} 
+                <XAxis
+                  type="number"
+                  dataKey="displayScore"
+                  name="Puntaje"
+                  unit=""
+                  domain={[0, 100]}
+                  axisLine={false}
                   tickLine={false}
                   label={{ value: "Puntaje de Conducción", position: "bottom", offset: 0, fill: "#888", fontSize: 10, fontWeight: 700 }}
                 />
-                <YAxis 
-                  type="number" 
-                  dataKey="displayEfficiency" 
-                  name="Eficiencia" 
-                  unit=" KM/L" 
-                  axisLine={false} 
+                <YAxis
+                  type="number"
+                  dataKey="displayEfficiency"
+                  name="Eficiencia"
+                  unit=" KM/L"
+                  axisLine={false}
                   tickLine={false}
                   label={{ value: "Eficiencia (KM/L)", angle: -90, position: "left", fill: "#888", fontSize: 10, fontWeight: 700 }}
                 />
                 <ZAxis type="number" dataKey="liters" range={[50, 250]} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip unit="Score/KM/L" />} />
-                
+
                 {/* Optimal zone highlight */}
                 {/* @ts-ignore */}
                 <ReferenceArea x1={80} x2={100} y1={stats.averageEfficiency} y2={stats.averageEfficiency + 10} fill="#4CAF50" fillOpacity={0.1} stroke="#4CAF50" strokeOpacity={0.2} />
                 <ReferenceLine y={stats.averageEfficiency} stroke="#94f990" strokeDasharray="3 3" label={{ value: 'Promedio', position: 'right', fill: '#4CAF50', fontSize: 10, fontWeight: 900 }} />
                 <ReferenceLine x={80} stroke="#1A237E" strokeDasharray="3 3" opacity={0.2} label={{ value: 'Zona Opt.', position: 'top', fill: '#1A237E', fontSize: 10, fontWeight: 900 }} />
 
-                <Scatter 
-                  name="Cargas" 
-                  data={stats.conductionScoreHistory} 
+                <Scatter
+                  name="Cargas"
+                  data={stats.conductionScoreHistory}
                   strokeWidth={2}
                   fillOpacity={0.5}
                   animationDuration={2000}
@@ -2763,7 +2763,7 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
               </div>
             </div>
           </div>
-          
+
           <div className="h-80 md:h-96 w-full bg-white/40 backdrop-blur-sm rounded-3xl p-4 md:p-8 border border-white/50 shadow-inner">
             <ResponsiveContainer width="100%" height="100%" debounce={50}>
               <ComposedChart data={stats.distanceHistory}>
@@ -2774,23 +2774,23 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis 
-                  dataKey="label" 
+                <XAxis
+                  dataKey="label"
                   tickFormatter={(val) => stats.distanceHistory.find(d => d.label === val)?.displayLabel || val}
-                  axisLine={false} 
-                  tickLine={false} 
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fontSize: 9, fontWeight: 700, fill: '#888' }}
                   minTickGap={20}
                   dy={10}
                 />
-                <YAxis 
+                <YAxis
                   yAxisId="left"
                   orientation="left"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#1A237E' }}
                 />
-                <YAxis 
+                <YAxis
                   yAxisId="right"
                   orientation="right"
                   axisLine={false}
@@ -2798,19 +2798,19 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#4CAF50' }}
                 />
                 <Tooltip content={<CustomTooltip unit="KM/L" />} cursor={{ fill: 'rgba(26, 35, 126, 0.02)' }} />
-                <Bar 
+                <Bar
                   yAxisId="left"
-                  dataKey="value" 
+                  dataKey="value"
                   name="Distancia"
-                  fill="#1A237E" 
-                  radius={[8, 8, 0, 0]} 
+                  fill="#1A237E"
+                  radius={[8, 8, 0, 0]}
                   barSize={32}
                   animationDuration={1500}
                 />
-                <Area 
+                <Area
                   yAxisId="right"
                   type="monotone"
-                  dataKey="liters" 
+                  dataKey="liters"
                   name="Combustible"
                   stroke="#4CAF50"
                   strokeWidth={3}
@@ -2868,14 +2868,14 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
 
 const MapView = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { fuelLogs: FuelLog[], vehicles: Vehicle[], selectedVehicleId: string | null, onSelectVehicle: (id: string) => void }) => {
   const logsWithLocation = fuelLogs.filter(log => log.location);
-  
+
   // Center map on the latest log or a default location
-  const center: [number, number] = logsWithLocation.length > 0 
+  const center: [number, number] = logsWithLocation.length > 0
     ? [logsWithLocation[0].location!.latitude, logsWithLocation[0].location!.longitude]
     : [19.4326, -99.1332]; // Mexico City default
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -2886,10 +2886,10 @@ const MapView = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle }: { f
           <span className="text-xs font-medium uppercase tracking-wider text-secondary">Mapa de Estaciones</span>
           <h2 className="text-4xl font-extrabold font-headline tracking-tight text-primary mt-1">Rutas & Cargas</h2>
         </div>
-        <VehicleSelector 
-          vehicles={vehicles} 
-          selectedVehicleId={selectedVehicleId} 
-          onSelect={onSelectVehicle} 
+        <VehicleSelector
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicleId}
+          onSelect={onSelectVehicle}
         />
       </section>
 
@@ -3027,8 +3027,8 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
             setApiPropulsions(COMMON_PROPULSIONS);
           }
         }
-      } catch (e) { 
-        console.error("Error fetching propulsion:", e); 
+      } catch (e) {
+        console.error("Error fetching propulsion:", e);
         // Fallback to common ones to unblock UI
         setApiPropulsions(COMMON_PROPULSIONS);
         if (!vehicleFormData.propulsion) {
@@ -3050,7 +3050,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       }
 
       if (!vehicleFormData.model || !vehicleFormData.propulsion) return;
-      
+
       const modelObj = apiModels.find(m => m.nombre === vehicleFormData.model);
       const propObj = apiPropulsions.find(p => p.nombre === vehicleFormData.propulsion);
       if (!modelObj || !propObj || modelObj.idModelo >= 999000) return; // If local, stop
@@ -3058,7 +3058,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       try {
         const url = `https://consumovehicular.minenergia.cl/backend/scv/vehiculo?criterio=idModelo:EQ:${modelObj.idModelo};idEtiqueta:EQ:${encodeURIComponent(propObj.idEtiqueta)}`;
         const data = await fetchFromProxy(url);
-        
+
         if (data && data.content && Array.isArray(data.content) && data.content.length > 0) {
           const vehicleData = data.content[0];
           let eff = vehicleData.rendimientoMixto || 10;
@@ -3126,19 +3126,19 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       try {
         const content = event.target?.result as string;
         const data = JSON.parse(content);
-        
+
         if (data.vehicles && Array.isArray(data.vehicles)) {
           for (const v of data.vehicles) {
             await onSaveVehicle(v);
           }
         }
-        
+
         if (data.fuelLogs && Array.isArray(data.fuelLogs)) {
           for (const log of data.fuelLogs) {
             await onSaveLog(log);
           }
         }
-        
+
         alert('Importación completada con éxito');
       } catch (error) {
         console.error('Error importing data:', error);
@@ -3183,7 +3183,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       }
 
       const vehicleId = vehicle.id;
-      
+
       // 2. Import logs
       for (const logData of toyotaCorollaCrossLogs) {
         const log: FuelLog = {
@@ -3200,7 +3200,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
         };
         await onSaveLog(log);
       }
-      
+
       alert('Registros del PDF importados con éxito');
     } catch (error) {
       console.error('Error importing PDF data:', error);
@@ -3244,7 +3244,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
         for (const row of json) {
           const vehicleName = row.Vehiculo || row.Vehicle || row.Nombre || row.Name;
           const vehicle = vehicles.find(v => v.name === vehicleName) || vehicles[0];
-          
+
           // Handle Date & Time
           let dateStr = new Date().toISOString().split('T')[0];
           let timeStr = "12:00";
@@ -3265,7 +3265,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
           const totalCost = Number(row.Total || row.Total_Cost || row.total || 0) || (liters * pricePerLiter);
 
           const log: FuelLog = {
-            id: '', 
+            id: '',
             vehicleId: vehicle?.id || '',
             date: dateStr,
             time: row.Hora || row.Time || row.hora || timeStr,
@@ -3292,7 +3292,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
@@ -3300,9 +3300,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
     >
       <section className="mb-12 text-center">
         <div className="relative inline-block mb-6">
-          <img 
-            src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} 
-            alt={user.name} 
+          <img
+            src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+            alt={user.name}
             className="w-32 h-32 rounded-full border-4 border-primary-container shadow-xl object-cover"
             referrerPolicy="no-referrer"
           />
@@ -3318,7 +3318,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
         <div className="bg-surface-container-low rounded-xl p-8 space-y-8">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold font-headline text-primary">Información Personal</h3>
-            <button 
+            <button
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
               className="text-primary-container font-bold text-sm uppercase tracking-widest flex items-center gap-2"
             >
@@ -3330,7 +3330,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
             <div className="space-y-2">
               <label htmlFor="user-name" className="text-xs font-bold uppercase tracking-widest text-secondary">Nombre Completo</label>
               {isEditing ? (
-                <input 
+                <input
                   id="user-name"
                   className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                   value={formData.name}
@@ -3350,7 +3350,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <div className="space-y-2">
                 <label htmlFor="user-units" className="text-xs font-bold uppercase tracking-widest text-secondary">Unidades</label>
                 {isEditing ? (
-                  <select 
+                  <select
                     id="user-units"
                     className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                     value={formData.preferredUnits}
@@ -3368,7 +3368,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <div className="space-y-2">
                 <label htmlFor="user-currency" className="text-xs font-bold uppercase tracking-widest text-secondary">Moneda</label>
                 {isEditing ? (
-                  <input 
+                  <input
                     id="user-currency"
                     className="w-full bg-surface-container-lowest p-4 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
                     value={formData.currency}
@@ -3385,7 +3385,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
         <div className="bg-surface-container-low p-8 rounded-xl space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold font-headline text-primary">Mis Vehículos</h2>
-            <button 
+            <button
               aria-label="Añadir nuevo vehículo"
               onClick={() => {
                 setEditingVehicle(null);
@@ -3404,9 +3404,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1">
                   <label htmlFor="vehicle-name" className="text-xs font-bold uppercase tracking-widest text-outline">Nombre (Alias)</label>
-                  <input 
+                  <input
                     id="vehicle-name"
-                    type="text" 
+                    type="text"
                     value={vehicleFormData.name}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, name: e.target.value })}
                     placeholder="Ej. Mi Camioneta"
@@ -3415,7 +3415,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="vehicle-make" className="text-xs font-bold uppercase tracking-widest text-outline">Marca</label>
-                    <select 
+                    <select
                       id="vehicle-make"
                       value={vehicleFormData.make}
                       onChange={(e) => setVehicleFormData({ ...vehicleFormData, make: e.target.value, model: '', propulsion: '' })}
@@ -3426,10 +3426,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                       ) : (
                         <option value="">Seleccionar Marca</option>
                       )}
-                      {(apiMakes.length > 0 ? apiMakes.map(m => m.nombre) : 
-                        ["Alfa Romeo", "Aston Martin", "Audi", "Baic", "Bentley", "BMW", "Borgward", "Brilliance", 
-                         "BYD", "Changan", "Chery", "Chevrolet", "Chrysler", "Citroen", "Cupra", "Daihatsu", 
-                         "Dodge", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mazda", "Nissan", "Peugeot", 
+                      {(apiMakes.length > 0 ? apiMakes.map(m => m.nombre) :
+                        ["Alfa Romeo", "Aston Martin", "Audi", "Baic", "Bentley", "BMW", "Borgward", "Brilliance",
+                         "BYD", "Changan", "Chery", "Chevrolet", "Chrysler", "Citroen", "Cupra", "Daihatsu",
+                         "Dodge", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mazda", "Nissan", "Peugeot",
                          "Renault", "Suzuki", "Toyota", "Volkswagen", "Volvo"]
                       ).filter(name => name !== vehicleFormData.make).map(brand => (
                         <option key={brand} value={brand}>{brand}</option>
@@ -3439,7 +3439,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 <div className="space-y-1">
                   <label htmlFor="vehicle-model" className="text-xs font-bold uppercase tracking-widest text-outline">Modelo</label>
                   <div className="relative">
-                    <select 
+                    <select
                       id="vehicle-model"
                       value={vehicleFormData.model}
                       onChange={(e) => setVehicleFormData({ ...vehicleFormData, model: e.target.value, propulsion: '' })}
@@ -3459,7 +3459,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="vehicle-propulsion" className="text-xs font-bold uppercase tracking-widest text-outline">Propulsión</label>
-                  <select 
+                  <select
                     id="vehicle-propulsion"
                     value={vehicleFormData.propulsion}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, propulsion: e.target.value })}
@@ -3478,9 +3478,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="vehicle-year" className="text-xs font-bold uppercase tracking-widest text-outline">Año</label>
-                  <input 
+                  <input
                     id="vehicle-year"
-                    type="number" 
+                    type="number"
                     value={vehicleFormData.year}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, year: parseInt(e.target.value) })}
                     className="w-full bg-surface-container-low p-3 rounded-lg border-none focus:ring-2 focus:ring-primary/20 text-primary font-medium"
@@ -3488,9 +3488,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="vehicle-plate" className="text-xs font-bold uppercase tracking-widest text-outline">Placa</label>
-                  <input 
+                  <input
                     id="vehicle-plate"
-                    type="text" 
+                    type="text"
                     value={vehicleFormData.plate}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, plate: e.target.value })}
                     placeholder="ABC-123"
@@ -3501,9 +3501,9 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                   <label htmlFor="vehicle-efficiency" className="text-xs font-bold uppercase tracking-widest text-outline">
                     {loadingEff ? 'Consultando rendimiento mixto...' : 'Rendimiento (KM/L)'}
                   </label>
-                  <input 
+                  <input
                     id="vehicle-efficiency"
-                    type="number" 
+                    type="number"
                     step="0.1"
                     value={vehicleFormData.targetEfficiency}
                     onChange={(e) => setVehicleFormData({ ...vehicleFormData, targetEfficiency: parseFloat(e.target.value) })}
@@ -3515,13 +3515,13 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button 
+                <button
                   onClick={handleSaveVehicle}
                   className="flex-1 py-3 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:shadow-lg transition-all"
                 >
                   {editingVehicle ? 'Actualizar' : 'Añadir'}
                 </button>
-                <button 
+                <button
                   onClick={() => setShowVehicleForm(false)}
                   className="flex-1 py-3 bg-surface-container-low text-primary rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-surface-variant transition-all"
                 >
@@ -3546,18 +3546,18 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                       <p className="text-xs font-bold text-outline uppercase tracking-widest">{v.make} {v.model} • {v.year}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                    <button 
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
                       aria-label="Editar vehículo"
                       onClick={() => startEditVehicle(v)}
-                      className="p-2 text-primary hover:bg-primary/10 rounded-full focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors"
+                      className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       aria-label="Eliminar vehículo"
                       onClick={() => onDeleteVehicle(v.id)}
-                      className="p-2 text-error hover:bg-error/10 rounded-full focus-visible:ring-2 focus-visible:ring-error outline-none transition-colors"
+                      className="p-2 text-error hover:bg-error/10 rounded-full transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -3579,10 +3579,10 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
           <p className="text-xs text-secondary leading-relaxed">
             Exporta tus registros para tener una copia de seguridad o impórtalos desde otro dispositivo.
           </p>
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <button 
+              <button
                 onClick={handleExportData}
                 className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 transition-all"
               >
@@ -3592,17 +3592,17 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <label className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 transition-all cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Importar JSON
-                <input 
-                  type="file" 
-                  accept=".json" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
                   onChange={handleImportData}
                 />
               </label>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <button 
+              <button
                 onClick={handleExportExcel}
                 className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 transition-all"
               >
@@ -3612,17 +3612,17 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
               <label className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 transition-all cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Importar Excel
-                <input 
-                  type="file" 
-                  accept=".xlsx, .xls, .csv" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  className="hidden"
                   onChange={handleImportExcel}
                 />
               </label>
             </div>
           </div>
 
-          <button 
+          <button
             onClick={handleImportPDFData}
             disabled={isImportingPDF}
             className="w-full flex items-center justify-center gap-2 py-4 px-4 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-primary/90 transition-all disabled:opacity-50"
@@ -3636,7 +3636,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
           </button>
         </div>
 
-        <button 
+        <button
           onClick={logout}
           className="w-full py-5 border-2 border-error/20 text-error rounded-xl font-bold text-sm uppercase tracking-[0.2em] hover:bg-error/5 transition-all active:scale-95 flex items-center justify-center gap-3"
         >
@@ -3652,14 +3652,14 @@ const LogDetails = ({ log, vehicle, fuelLogs, onClose, onEdit, onDelete }: { log
   const stats = calculateLogStats(log, fuelLogs);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-surface/80 backdrop-blur-xl flex items-center justify-center p-6"
       onClick={onClose}
     >
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -3669,16 +3669,16 @@ const LogDetails = ({ log, vehicle, fuelLogs, onClose, onEdit, onDelete }: { log
         <div className="relative h-48 bg-primary-container flex items-center justify-center overflow-hidden shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
           {getStationLogo(log.stationName) ? (
-            <img 
-              src={getStationLogo(log.stationName)!} 
-              alt={log.stationName} 
+            <img
+              src={getStationLogo(log.stationName)!}
+              alt={log.stationName}
               className="w-24 h-24 object-contain relative z-10 drop-shadow-2xl"
               referrerPolicy="no-referrer"
             />
           ) : (
             <Fuel className="text-white w-20 h-20 relative z-10" />
           )}
-          <button 
+          <button
             aria-label="Cerrar detalles"
             onClick={onClose}
             className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
@@ -3742,14 +3742,14 @@ const LogDetails = ({ log, vehicle, fuelLogs, onClose, onEdit, onDelete }: { log
           )}
 
           <div className="flex gap-4 pt-4">
-            <button 
+            <button
               onClick={() => { onEdit(log); onClose(); }}
               className="flex-1 py-4 bg-primary text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <Edit2 className="w-4 h-4" />
               Editar
             </button>
-            <button 
+            <button
               onClick={() => { if(confirm('¿Estás seguro de eliminar este registro?')) { onDelete(log.id); onClose(); } }}
               className="flex-1 py-4 bg-surface-container-low text-error rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-error/5 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
@@ -3794,7 +3794,7 @@ export default function App() {
         const userDocRef = doc(db, 'users', fUser.uid);
         try {
           const userDoc = await getDoc(userDocRef);
-          
+
           if (!userDoc.exists()) {
             const newUser: UserProfile = {
               name: fUser.displayName || 'Usuario',
@@ -3878,7 +3878,7 @@ export default function App() {
 
   const handleSaveLog = async (log: FuelLog) => {
     if (!firebaseUser) return;
-    
+
     const { id, ...logData } = log;
     const logsRef = collection(db, 'users', firebaseUser.uid, 'fuelLogs');
     const path = editingLog ? `users/${firebaseUser.uid}/fuelLogs/${id}` : `users/${firebaseUser.uid}/fuelLogs`;
@@ -3892,7 +3892,7 @@ export default function App() {
     } catch (error) {
       handleFirestoreError(error, editingLog ? OperationType.UPDATE : OperationType.CREATE, path);
     }
-    
+
     setEditingLog(null);
     setActiveTab('history');
   };
@@ -3914,7 +3914,7 @@ export default function App() {
 
   const handleMigrateLogs = async () => {
     if (!firebaseUser || fuelLogs.length === 0) return;
-    
+
     const promises = fuelLogs.map(log => {
       const logRef = doc(db, 'users', firebaseUser.uid, 'fuelLogs', log.id);
       return updateDoc(logRef, {
@@ -3964,31 +3964,31 @@ export default function App() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <Dashboard 
-            fuelLogs={filteredLogs} 
+          <Dashboard
+            fuelLogs={filteredLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
-            onNavigateToNew={() => { setEditingLog(null); setActiveTab('new'); }} 
+            onNavigateToNew={() => { setEditingLog(null); setActiveTab('new'); }}
           />
         );
       case 'history':
         return (
-          <History 
-            fuelLogs={filteredLogs} 
+          <History
+            fuelLogs={filteredLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
-            onEdit={handleEditLog} 
-            onDelete={handleDeleteLog} 
+            onEdit={handleEditLog}
+            onDelete={handleDeleteLog}
             onView={setViewingLog}
           />
         );
       case 'projection':
         return (
-          <Projection 
+          <Projection
             user={user}
-            fuelLogs={filteredLogs} 
+            fuelLogs={filteredLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
@@ -3996,8 +3996,8 @@ export default function App() {
         );
       case 'map':
         return (
-          <MapView 
-            fuelLogs={filteredLogs} 
+          <MapView
+            fuelLogs={filteredLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
@@ -4005,20 +4005,20 @@ export default function App() {
         );
       case 'new':
         return (
-          <NewEntry 
+          <NewEntry
             key={editingLog ? editingLog.id : 'new'}
-            editingLog={editingLog} 
-            fuelLogs={fuelLogs} 
+            editingLog={editingLog}
+            fuelLogs={fuelLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
-            onSave={handleSaveLog} 
-            onCancel={() => { setEditingLog(null); setActiveTab('history'); }} 
+            onSave={handleSaveLog}
+            onCancel={() => { setEditingLog(null); setActiveTab('history'); }}
           />
         );
       case 'stats':
         return (
-          <Stats 
-            fuelLogs={filteredLogs} 
+          <Stats
+            fuelLogs={filteredLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
@@ -4027,11 +4027,11 @@ export default function App() {
         );
       case 'profile':
         return (
-          <Profile 
-            user={user} 
+          <Profile
+            user={user}
             vehicles={vehicles}
             fuelLogs={fuelLogs}
-            onUpdateUser={handleUpdateUser} 
+            onUpdateUser={handleUpdateUser}
             onSaveVehicle={handleSaveVehicle}
             onDeleteVehicle={handleDeleteVehicle}
             onSaveLog={handleSaveLog}
@@ -4039,12 +4039,12 @@ export default function App() {
         );
       default:
         return (
-          <Dashboard 
-            fuelLogs={filteredLogs} 
+          <Dashboard
+            fuelLogs={filteredLogs}
             vehicles={vehicles}
             selectedVehicleId={selectedVehicleId}
             onSelectVehicle={setSelectedVehicleId}
-            onNavigateToNew={() => { setEditingLog(null); setActiveTab('new'); }} 
+            onNavigateToNew={() => { setEditingLog(null); setActiveTab('new'); }}
           />
         );
     }
@@ -4060,18 +4060,18 @@ export default function App() {
           </AnimatePresence>
           <AnimatePresence>
             {showSettings && (
-              <SettingsModal 
-                user={user} 
+              <SettingsModal
+                user={user}
                 onMigrateLogs={handleMigrateLogs}
-                onUpdateUser={handleUpdateUser} 
-                onClose={() => setShowSettings(false)} 
+                onUpdateUser={handleUpdateUser}
+                onClose={() => setShowSettings(false)}
               />
             )}
           </AnimatePresence>
           <AnimatePresence>
             {viewingLog && (
-              <LogDetails 
-                log={viewingLog} 
+              <LogDetails
+                log={viewingLog}
                 vehicle={vehicles.find(v => v.id === viewingLog.vehicleId)}
                 fuelLogs={fuelLogs}
                 onClose={() => setViewingLog(null)}
@@ -4081,12 +4081,12 @@ export default function App() {
             )}
           </AnimatePresence>
         </main>
-        <BottomNavBar 
-          activeTab={activeTab} 
+        <BottomNavBar
+          activeTab={activeTab}
           onTabChange={(tab) => {
             if (tab === 'new') setEditingLog(null);
             setActiveTab(tab);
-          }} 
+          }}
         />
       </div>
     </ErrorBoundary>
