@@ -6,3 +6,8 @@
 **Vulnerability:** A specific admin email address (`gbustam@gmail.com`) was hardcoded directly into the Firestore security rules.
 **Learning:** Hardcoding specific user identifiers (like email addresses or UIDs) in security rules creates a critical security vulnerability and violates the principle of least privilege and "No hardcoded secrets". It bypasses standard role-based access control and can lead to unintended, permanent authorization if that specific email account is ever compromised or reassigned.
 **Prevention:** Always rely on dynamic, database-driven role-based access control (RBAC) mechanisms. When verifying admin privileges in Firestore rules, strictly check the user's document for a designated `role` field (e.g., `data.role == 'admin'`) rather than checking for hardcoded literal email strings.
+
+## 2026-04-08 - Weak Random Number Generation for IDs
+**Vulnerability:** The application was using `Math.random().toString(36).substr(2, 9)` to generate identifiers for new objects.
+**Learning:** `Math.random()` is not cryptographically secure and the resulting strings are highly predictable. In a scenario where IDs can be accessed, predictable IDs can lead to enumeration attacks or ID collisions.
+**Prevention:** Always use standard, secure APIs like `crypto.randomUUID()` for generating universally unique identifiers in the frontend.

@@ -1921,7 +1921,7 @@ const NewEntry = ({ editingLog, fuelLogs, vehicles, selectedVehicleId, onSave, o
         setIsSubmitting(true);
         try {
           const log: FuelLog = {
-            id: editingLog?.id || Math.random().toString(36).substr(2, 9),
+            id: editingLog?.id || crypto.randomUUID(),
             vehicleId,
             date,
             time,
@@ -3187,7 +3187,7 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
       // 2. Import logs
       for (const logData of toyotaCorollaCrossLogs) {
         const log: FuelLog = {
-          id: Math.random().toString(36).substr(2, 9),
+          id: crypto.randomUUID(),
           vehicleId,
           date: logData.date,
           time: logData.time,
