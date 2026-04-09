@@ -24,3 +24,7 @@
 ## 2024-05-22 - Replacing new Date() inside map loops with String Manipulation
 **Learning:** Instantiating `new Date()` inside `.map()` loops during component rendering causes performance overhead and memory pressure, as well as possible timezone shift issues when only the string components (like month and year) are needed.
 **Action:** Created a string manipulation helper `formatMonthYearStr` that directly extracts the month and year from a `YYYY-MM-DD` string, replacing the need for `new Date()` within high-frequency `.map()` functions like the ones used in the `Stats` component.
+
+## 2024-05-23 - Avoid O(N*M) nested iterations for accumulated time-series data
+**Learning:** Calculating accumulated values (like "max mileage up to this month") inside a `.map` loop over time intervals (like months) by re-filtering the entire dataset for every interval creates an O(N * M) performance bottleneck, especially painful within React render cycles.
+**Action:** Since the data is usually already sorted by date, replace the nested `.filter` and `.reduce` inside the interval `.map` with an external cursor (`logIndex`) and an accumulator. Iterating through the sorted array exactly once alongside the time intervals reduces the complexity to O(N + M). Next time, whenever generating accumulated time-series data across intervals, always use a single-pass sorted cursor approach rather than recalculating from scratch per interval.
