@@ -1076,9 +1076,14 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
           months.push({ month: current.getMonth(), year: current.getFullYear(), label: formatMonthYear(current), endDateStr });
           current.setMonth(current.getMonth() + 1);
         }
+        let logIndex = 0;
+        let currentMaxMileage = 0;
         return months.map(m => {
-          const mileageUpToMonth = fuelLogs.filter(l => l.date <= m.endDateStr).reduce((max, l) => Math.max(max, l.mileage), 0);
-          return { name: m.label, mileage: mileageUpToMonth };
+          while (logIndex < sorted.length && sorted[logIndex].date <= m.endDateStr) {
+            currentMaxMileage = Math.max(currentMaxMileage, sorted[logIndex].mileage);
+            logIndex++;
+          }
+          return { name: m.label, mileage: currentMaxMileage };
         }).filter(m => m.mileage > 0);
       })()
     };
