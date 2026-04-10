@@ -1405,11 +1405,22 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
       </section>
 
       <div className="space-y-6">
-        {fuelLogs.map((log) => {
-          const stats = calculateLogStats(log, fuelLogs);
-          return (
-            <div key={log.id} className="bg-surface-container-low p-1 rounded-xl group cursor-pointer" onClick={() => onView(log)}>
-              <div className="bg-surface-container-lowest rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[0_8px_32px_rgba(26,35,126,0.04)] relative overflow-hidden">
+        {fuelLogs.length === 0 ? (
+          <div className="bg-surface-container-low p-12 rounded-xl text-center border border-primary/5 flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-surface-variant/50 rounded-full flex items-center justify-center mb-4">
+              <Fuel className="w-8 h-8 text-secondary opacity-50" />
+            </div>
+            <h3 className="text-lg font-bold font-headline text-primary mb-2">No hay registros de cargas</h3>
+            <p className="text-secondary text-sm max-w-sm">
+              Añade tu primera carga de combustible para comenzar a ver tu historial y generar estadísticas de tu flota.
+            </p>
+          </div>
+        ) : (
+          fuelLogs.map((log) => {
+            const stats = calculateLogStats(log, fuelLogs);
+            return (
+              <div key={log.id} className="bg-surface-container-low p-1 rounded-xl group cursor-pointer" onClick={() => onView(log)}>
+                <div className="bg-surface-container-lowest rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-[0_8px_32px_rgba(26,35,126,0.04)] relative overflow-hidden">
                 {log.isHighEfficiency && (
                   <div className="absolute top-0 right-0">
                     <div className="bg-tertiary-fixed text-on-tertiary-fixed-variant text-xs font-bold px-4 py-1 rounded-bl-xl uppercase tracking-tighter">
@@ -1481,18 +1492,21 @@ const History = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onEdi
                     <span className="text-xl font-extrabold font-headline text-primary">${formatMoney(log.totalCost)}</span>
                   </div>
                 </div>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
-      <div className="mt-12 flex justify-center">
-        <button className="bg-surface-container-low text-primary font-bold py-4 px-12 rounded-lg hover:bg-surface-variant transition-all active:scale-95 flex items-center gap-3">
-          <span className="text-xs font-bold uppercase tracking-widest">Cargar más historial</span>
-          <ChevronDown className="w-4 h-4" />
-        </button>
-      </div>
+      {fuelLogs.length > 0 && (
+        <div className="mt-12 flex justify-center">
+          <button className="bg-surface-container-low text-primary font-bold py-4 px-12 rounded-lg hover:bg-surface-variant transition-all active:scale-95 flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-primary outline-none">
+            <span className="text-xs font-bold uppercase tracking-widest">Cargar más historial</span>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 };

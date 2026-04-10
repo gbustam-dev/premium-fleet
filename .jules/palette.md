@@ -5,3 +5,7 @@
 ## 2024-04-05 - Form Input Labels and Focus Routing
 **Learning:** Labels that are visual siblings to inputs (but don't encapsulate them) lack programmatic connection, meaning clicking the label won't focus the input and screen readers won't announce the label name correctly.
 **Action:** Always link visual label siblings to their inputs using `htmlFor` and `id` attributes to preserve focus routing and improve accessibility.
+
+## 2025-04-10 - Empty States and Conditional Pagination
+**Learning:** Empty lists without explicit empty states create a confusing experience, leaving users unsure if data failed to load or if the list is genuinely empty. Also, pagination controls like "Load more" look broken when rendered below an empty list.
+**Action:** Always implement a dedicated empty state container with an icon and helpful copy for lists. Conditionally render pagination or "Load more" controls only when list items exist.
