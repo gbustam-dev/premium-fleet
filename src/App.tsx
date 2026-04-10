@@ -1032,7 +1032,9 @@ const Dashboard = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, onN
       if (distance > 0 && litersConsumed > 0) averageEfficiency = distance / litersConsumed;
     }
 
-    const currentOdometer = fuelLogs.length > 0 ? Math.max(...fuelLogs.map(l => l.mileage)) : 0;
+    // Bolt: Avoid Math.max(...map()) to prevent intermediate array creation overhead
+    // and RangeError (Maximum call stack size exceeded) on large data sets
+    const currentOdometer = fuelLogs.length > 0 ? fuelLogs.reduce((max, log) => log.mileage > max ? log.mileage : max, 0) : 0;
 
     // Operational Efficiency for the view month
     const targetEfficiency = selectedVehicle?.targetEfficiency || 10;
@@ -2376,8 +2378,10 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
     const totalRefuels = fuelLogs.length;
     const totalInvestment = fuelLogs.reduce((acc, log) => acc + log.totalCost, 0);
     
-    const minOdo = Math.min(...fuelLogs.map(l => l.mileage));
-    const maxOdo = Math.max(...fuelLogs.map(l => l.mileage));
+    // Bolt: Avoid Math.max/min(...map()) to prevent intermediate array creation overhead
+    // and RangeError (Maximum call stack size exceeded) on large data sets
+    const minOdo = fuelLogs.length > 0 ? fuelLogs.reduce((min, log) => log.mileage < min ? log.mileage : min, fuelLogs[0].mileage) : 0;
+    const maxOdo = fuelLogs.length > 0 ? fuelLogs.reduce((max, log) => log.mileage > max ? log.mileage : max, 0) : 0;
     const totalDistance = maxOdo - minOdo;
     const totalKilometers = maxOdo; // Current odometer
     const avgCostPerKm = totalDistance > 0 ? totalInvestment / totalDistance : 0;
