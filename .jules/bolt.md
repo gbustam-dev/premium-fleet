@@ -32,3 +32,7 @@
 ## 2025-04-10 - Avoid Math.max(...map()) to prevent intermediate array creation overhead
 **Learning:** Using `Math.max(...array.map(item => item.value))` on large datasets creates a potentially huge intermediate array and then spreads it across the call stack, which can lead to excessive memory allocation, garbage collection overhead, and a `RangeError: Maximum call stack size exceeded`. This O(N) memory allocation and potential stack crash are common performance anti-patterns in UI rendering logic like within `App.tsx` where this pattern was identified.
 **Action:** Always replace the spread map pattern for finding min/max values with a single-pass `reduce` function (e.g. `array.reduce((max, item) => item.value > max ? item.value : max, 0)`), or by directly accessing values if the array is already sorted.
+
+## 2026-04-11 - Hoisting static object arrays from render functions
+**Learning:** Found an inline constant array `tabs` instantiated inside the `BottomNavBar` render loop. This array causes unnecessary allocations and garbage collection overhead on every render cycle.
+**Action:** Extract and hoist constant object arrays (`NAV_TABS`) to the top level scope, outside of component rendering logic, to persist the object reference and avoid reallocation memory overhead.

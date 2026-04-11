@@ -635,20 +635,21 @@ const TopAppBar = ({ onSettingsClick }: { onSettingsClick: () => void }) => (
   </header>
 );
 
-const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChange: (tab: string) => void }) => {
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', ariaLabel: 'Tablero principal', icon: LayoutDashboard },
-    { id: 'history', label: 'History', ariaLabel: 'Historial de combustible', icon: HistoryIcon },
-    { id: 'new', label: 'Nuevo', ariaLabel: 'Añadir nuevo registro', icon: Plus, isSpecial: true },
-    { id: 'map', label: 'Mapa', ariaLabel: 'Mapa de estaciones', icon: MapPin },
-    { id: 'projection', label: 'Proyección', ariaLabel: 'Proyección de costos', icon: Zap },
-    { id: 'stats', label: 'Stats', ariaLabel: 'Estadísticas de consumo', icon: TrendingUp },
-    { id: 'profile', label: 'Profile', ariaLabel: 'Perfil de usuario', icon: User },
-  ];
+// ⚡ Bolt: Performance optimization - hoisted constant arrays to avoid unnecessary re-allocations during render cycles
+const NAV_TABS = [
+  { id: 'dashboard', label: 'Dashboard', ariaLabel: 'Tablero principal', icon: LayoutDashboard },
+  { id: 'history', label: 'History', ariaLabel: 'Historial de combustible', icon: HistoryIcon },
+  { id: 'new', label: 'Nuevo', ariaLabel: 'Añadir nuevo registro', icon: Plus, isSpecial: true },
+  { id: 'map', label: 'Mapa', ariaLabel: 'Mapa de estaciones', icon: MapPin },
+  { id: 'projection', label: 'Proyección', ariaLabel: 'Proyección de costos', icon: Zap },
+  { id: 'stats', label: 'Stats', ariaLabel: 'Estadísticas de consumo', icon: TrendingUp },
+  { id: 'profile', label: 'Profile', ariaLabel: 'Perfil de usuario', icon: User },
+];
 
+const BottomNavBar = ({ activeTab, onTabChange }: { activeTab: string, onTabChange: (tab: string) => void }) => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/60 backdrop-blur-xl px-4 pb-8 pt-3 flex justify-around items-center rounded-t-[2rem] shadow-[0_-8px_32px_rgba(26,35,126,0.06)]">
-      {tabs.map((tab) => {
+      {NAV_TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         
