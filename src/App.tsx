@@ -2406,69 +2406,77 @@ const Stats = ({ fuelLogs, vehicles, selectedVehicleId, onSelectVehicle, lastSyn
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
     const targetEff = vehicle?.targetEfficiency || 15;
 
-    const priceVariation = sortedLogs.map((log, i) => ({
-      label: `Carga #${i + 1}`,
-      displayLabel: formatMonthYearStr(log.date),
-      fullDate: log.date,
-      price: log.pricePerLiter,
-      dateOriginal: log.date
-    }));
+    const priceVariation = [];
+    const efficiencyHistory = [];
+    const distanceHistory = [];
+    const eventConsumption = [];
+    const conductionScoreHistory = [];
 
-    const efficiencyHistory = sortedLogs.slice(1).map((log, i) => {
-      const prev = sortedLogs[i];
-      const dist = log.mileage - prev.mileage;
-      const eff = dist / log.liters;
-      return {
-        label: `Carga #${i + 2}`,
-        displayLabel: formatMonthYearStr(log.date),
-        fullDate: log.date,
-        value: isFinite(eff) && eff > 0 ? parseFloat(eff.toFixed(2)) : 0
-      };
-    }).filter(h => h.value > 0);
+    // Single pass to build all historical arrays to avoid intermediate arrays and GC pressure
+    for (let i = 0; i < sortedLogs.length; i++) {
+      const log = sortedLogs[i];
+      const label = `Carga #${i + 1}`;
+      const displayLabel = formatMonthYearStr(log.date);
 
-    const distanceHistory = sortedLogs.slice(1).map((log, i) => {
-      const prev = sortedLogs[i];
-      return {
-        label: `Carga #${i + 2}`,
-        displayLabel: formatMonthYearStr(log.date),
+      priceVariation.push({
+        label,
+        displayLabel,
         fullDate: log.date,
-        value: Math.max(0, log.mileage - prev.mileage),
+        price: log.pricePerLiter,
+        dateOriginal: log.date
+      });
+
+      eventConsumption.push({
+        label,
+        displayLabel,
+        fullDate: log.date,
         liters: log.liters
-      };
-    });
+      });
 
-    const eventConsumption = sortedLogs.map((log, i) => ({
-      label: `Carga #${i + 1}`,
-      displayLabel: formatMonthYearStr(log.date),
-      fullDate: log.date,
-      liters: log.liters
-    }));
+      if (i > 0) {
+        const prev = sortedLogs[i - 1];
+        const dist = log.mileage - prev.mileage;
+        const eff = dist / log.liters;
+        const nextLabel = `Carga #${i + 1}`;
 
-    const conductionScoreHistory = sortedLogs.slice(1).map((log, i) => {
-      const prev = sortedLogs[i];
-      const dist = log.mileage - prev.mileage;
-      const efficiency = dist / log.liters;
-      if (!isFinite(efficiency) || efficiency <= 0) return null;
-      
-      const normalizedEff = Math.min(efficiency / (targetEff * 1.5), 1);
-      // Use a deterministic "pseudo-random" based on data to keep it stable but dynamic-looking
-      const dataHash = (dist + log.liters + log.totalCost) % 10;
-      const score = Math.round(normalizedEff * 80 + 10 + dataHash);
-      
-      return { 
-        score,
-        efficiency: parseFloat(efficiency.toFixed(2)),
-        displayScore: score,
-        displayEfficiency: efficiency,
-        liters: log.liters, 
-        z: log.liters,
-        label: `Carga #${i + 2}`,
-        displayLabel: formatMonthYearStr(log.date),
-        fullDate: log.date,
-        // Progresión de color: más claro para antiguas, más intenso para recientes
-        color: `hsl(220, 70%, ${70 - (i / sortedLogs.length) * 40}%)` 
-      };
-    }).filter((d): d is any => d !== null);
+        if (isFinite(eff) && eff > 0) {
+          const formattedEff = parseFloat(eff.toFixed(2));
+          if (formattedEff > 0) {
+            efficiencyHistory.push({
+              label: nextLabel,
+              displayLabel,
+              fullDate: log.date,
+              value: formattedEff
+            });
+          }
+
+          const normalizedEff = Math.min(eff / (targetEff * 1.5), 1);
+          const dataHash = (dist + log.liters + log.totalCost) % 10;
+          const score = Math.round(normalizedEff * 80 + 10 + dataHash);
+
+          conductionScoreHistory.push({
+            score,
+            efficiency: parseFloat(eff.toFixed(2)),
+            displayScore: score,
+            displayEfficiency: eff,
+            liters: log.liters,
+            z: log.liters,
+            label: nextLabel,
+            displayLabel,
+            fullDate: log.date,
+            color: `hsl(220, 70%, ${70 - ((i - 1) / (sortedLogs.length - 1)) * 40}%)`
+          });
+        }
+
+        distanceHistory.push({
+          label: nextLabel,
+          displayLabel,
+          fullDate: log.date,
+          value: Math.max(0, dist),
+          liters: log.liters
+        });
+      }
+    }
 
     let averageEfficiency = 0;
     if (sortedLogs.length >= 2) {

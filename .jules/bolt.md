@@ -36,3 +36,7 @@
 ## 2026-04-11 - Hoisting static object arrays from render functions
 **Learning:** Found an inline constant array `tabs` instantiated inside the `BottomNavBar` render loop. This array causes unnecessary allocations and garbage collection overhead on every render cycle.
 **Action:** Extract and hoist constant object arrays (`NAV_TABS`) to the top level scope, outside of component rendering logic, to persist the object reference and avoid reallocation memory overhead.
+
+## 2024-05-24 - Avoiding multiple map/filter passes on the same array
+**Learning:** Found multiple separate `.map()` and `.filter()` operations over the same large array (`sortedLogs`) to extract different metrics (`priceVariation`, `efficiencyHistory`, `distanceHistory`, etc.) in the `Stats` component. This O(K * N) approach creates K intermediate arrays and excessive garbage collection pressure during each render.
+**Action:** Consolidate multiple iterative passes into a single O(N) `for` loop that populates all required arrays simultaneously. This eliminates intermediate allocations and reduces the time complexity from O(K*N) to O(N).
