@@ -9,3 +9,6 @@
 ## 2025-04-10 - Empty States and Conditional Pagination
 **Learning:** Empty lists without explicit empty states create a confusing experience, leaving users unsure if data failed to load or if the list is genuinely empty. Also, pagination controls like "Load more" look broken when rendered below an empty list.
 **Action:** Always implement a dedicated empty state container with an icon and helpful copy for lists. Conditionally render pagination or "Load more" controls only when list items exist.
+## 2024-04-12 - File Input Keyboard Accessibility
+**Learning:** Using `className="hidden"` on file inputs completely removes them from the tab order, breaking keyboard navigation for file uploads.
+**Action:** Always use `className="sr-only"` for visually hidden inputs, correctly link them with `id` and `htmlFor` on the wrapping `<label>`, and use `focus-within` on the `<label>` to ensure visible focus indicators.
