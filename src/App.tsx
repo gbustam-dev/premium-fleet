@@ -3571,7 +3571,15 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
 
           <div className="space-y-4">
             {vehicles.length === 0 ? (
-              <p className="text-center text-secondary py-8 italic">No tienes vehículos registrados.</p>
+              <div className="bg-surface-container-low p-12 rounded-xl text-center border border-primary/5 flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-surface-variant/50 rounded-full flex items-center justify-center mb-4">
+                  <Car className="w-8 h-8 text-secondary opacity-50" />
+                </div>
+                <h3 className="text-lg font-bold font-headline text-primary mb-2">No tienes vehículos registrados</h3>
+                <p className="text-secondary text-sm max-w-sm">
+                  Añade un vehículo para comenzar a registrar cargas y analizar el rendimiento de tu flota.
+                </p>
+              </div>
             ) : (
               vehicles.map(v => (
                 <div key={v.id} className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-primary/5 hover:border-primary/20 transition-all group">
@@ -3627,13 +3635,14 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 <Download className="w-4 h-4" />
                 Exportar JSON
               </button>
-              <label className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 transition-all cursor-pointer">
+              <label htmlFor="import-json" className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 focus-within:ring-2 focus-within:ring-primary transition-all cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Importar JSON
                 <input 
+                  id="import-json"
                   type="file" 
                   accept=".json" 
-                  className="hidden" 
+                  className="sr-only"
                   onChange={handleImportData}
                 />
               </label>
@@ -3647,13 +3656,14 @@ const Profile = ({ user, vehicles, fuelLogs, onUpdateUser, onSaveVehicle, onDele
                 <Download className="w-4 h-4" />
                 Exportar Excel
               </button>
-              <label className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 transition-all cursor-pointer">
+              <label htmlFor="import-excel" className="flex items-center justify-center gap-2 py-4 px-4 bg-surface-container-lowest text-primary rounded-lg font-bold text-xs uppercase tracking-widest border border-primary/10 hover:bg-primary/5 focus-within:ring-2 focus-within:ring-primary transition-all cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Importar Excel
                 <input 
+                  id="import-excel"
                   type="file" 
                   accept=".xlsx, .xls, .csv" 
-                  className="hidden" 
+                  className="sr-only"
                   onChange={handleImportExcel}
                 />
               </label>
